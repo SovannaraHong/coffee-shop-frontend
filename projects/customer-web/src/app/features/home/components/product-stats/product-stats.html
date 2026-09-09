@@ -1,0 +1,15 @@
+<section class="bg-[#faf5f0] border-t border-[#e3d9cf]">
+  <div class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6">
+    @for (f of features; track f.title) {
+      <div class="flex items-center gap-3">
+        <span class="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0" [ngClass]="f.bg">
+          {{ f.icon }}
+        </span>
+        <div>
+          <p class="text-sm font-semibold text-[#1f1410]">{{ f.title }}</p>
+          <p class="text-xs text-[#7a6a5e] mt-0.5">{{ f.desc }}</p>
+        </div>
+      </div>
+    }
+  </div>
+</section>
