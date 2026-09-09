@@ -1,0 +1,85 @@
+<section class="relative w-full min-h-[560px] md:min-h-[640px] overflow-hidden bg-[#faf6f0]">
+
+  <!-- Full-bleed background image -->
+ <div class="absolute inset-0">
+  @for (img of images; track img; let i = $index) {
+    <img
+      [src]="img"
+      alt="Brewista coffee shop"
+      class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out"
+      [class.opacity-100]="i === activeIndex()"
+      [class.opacity-0]="i !== activeIndex()"
+    />
+  }
+</div>
+
+  <!-- Gradient overlay -->
+  <div
+    class="absolute inset-0 bg-gradient-to-r from-[#faf6f0] via-[#faf6f0]/90 md:via-[#faf6f0]/85 to-transparent"
+  ></div>
+
+  <!-- Wooden tag overlay on the image -->
+  <div
+    class="absolute top-10 right-6 md:right-12 bg-[#3c2a1e] text-[#f4e9da] rounded-xl shadow-lg px-5 py-4 rotate-[-3deg] border border-[#5a4433] z-10">
+    <p class="text-sm font-bold leading-tight tracking-wide">LIFE HAPPENS</p>
+    <p class="text-sm font-bold leading-tight tracking-wide">COFFEE HELPS ♥</p>
+  </div>
+
+  <!-- Everything below flows normally: text -> buttons -> feature bar, top to bottom -->
+  <div class="relative z-10 max-w-7xl mx-auto px-6 py-16 md:py-20">
+    <div class="max-w-lg">
+      <p class="flex items-center gap-2 text-[30px] text-[#b9865a] mb-4 font-script">
+        Good Coffee, Good Vibes
+        <svg class="w-5 h-5 -mt-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2C9 6 4 9 4 14a8 8 0 0 0 16 0c0-5-5-8-8-12z" />
+        </svg>
+      </p>
+
+      <h1 class="text-5xl md:text-6xl font-extrabold  font-poppins text-[#1f1410] leading-[1.08] tracking-tight">
+        Start Your Day<br />
+        the <span class="text-[#c9973f]">Right</span> Way
+      </h1>
+
+      <p class="text-[#7a6a5e] mt-6 max-w-md font-poppins leading-relaxed">
+        We serve freshly brewed coffee, delicious food, and good vibes — every single day.
+      </p>
+
+      <div class="flex items-center gap-4 mt-9">
+        <button
+          class="flex items-center gap-2 bg-[#1f1410] font-poppins text-white text-xs font-semibold uppercase tracking-widest px-7 py-4 rounded-full hover:bg-[#33231a] transition-colors">
+          Explore Menu
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </button>
+
+        <button
+          class="flex font-poppins items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[#1f1410] border border-[#ddd0c2] px-7 py-4 rounded-full hover:bg-white/60 transition-colors">
+          Book a Table
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Feature bar: normal flow, sits below the buttons with its own margin, never overlaps them -->
+    <div
+      class="mt-10 md:mt-14 bg-white/95 backdrop-blur-sm rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)]
+             grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-[#eee6da] px-5 py-5
+             w-full md:w-[560px]">
+      @for (f of features; track f.title) {
+        <div class="flex items-start font-poppins gap-2.5 px-2.5 py-2.5 md:py-0">
+          <span class="text-[#c9973f] mt-0.5 shrink-0" [innerHTML]="f.icon"></span>
+          <div>
+            <p class="text-xs font-semibold text-[#1f1410]">{{ f.title }}</p>
+            <p class="text-[11px] text-[#8a7a6c] mt-1 leading-relaxed">{{ f.desc }}</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
