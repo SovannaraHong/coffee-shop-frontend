@@ -67,7 +67,7 @@ export class Navbar implements OnInit {
     },
     {
       label: 'My Orders',
-      icon: 'bag',
+      icon: 'shopping-bag',
       action: 'orders',
     },
     {
