@@ -1,0 +1,57 @@
+<div class="mx-auto max-w-6xl px-4 py-6 font-poppins">
+  @if (isLoading()) {
+    <div class="space-y-6 animate-pulse">
+      <div class="flex gap-3 overflow-hidden">
+        @for (item of [1, 2, 3, 4, 5]; track item) {
+          <div class="h-10 w-24 shrink-0 rounded-full bg-slate-200"></div>
+        }
+      </div>
+      <div>
+        <div class="mb-4 h-6 w-32 rounded bg-slate-200"></div>
+        <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+          @for (item of [1, 2, 3, 4, 5, 6, 7, 8]; track item) {
+            <div class="overflow-hidden rounded-xl bg-white">
+              <div class="aspect-square bg-slate-200"></div>
+              <div class="space-y-3 p-4">
+                <div class="h-4 w-3/4 rounded bg-slate-200"></div>
+                <div class="h-3 w-full rounded bg-slate-200"></div>
+                <div class="h-3 w-1/2 rounded bg-slate-200"></div>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  } @else if (loadError()) {
+    <div class="flex flex-col items-center gap-3 py-12 text-center">
+      <p class="text-sm text-slate-500">Something went wrong loading the menu.</p>
+      <button
+        type="button"
+        class="rounded-full bg-slate-900 px-4 py-2 text-sm text-white"
+        (click)="retry()"
+      >
+        Try again
+      </button>
+    </div>
+  } @else if (products().length === 0) {
+    <p class="text-sm text-slate-400">No products available right now.</p>
+  } @else {
+    <app-category-filter
+      [categories]="categories()"
+      [activeCategory]="activeCategory()"
+      (categorySelected)="onCategorySelect($event)"
+    />
+
+    @for (category of visibleCategories(); track category) {
+      @if (productsByCategory()[category]?.length) {
+        <app-promo-carousel
+          [title]="category"
+          [products]="productsByCategory()[category]"
+          [favoriteIds]="favoriteIds()"
+          (toggleFavorite)="onToggleFavorite($event)"
+          (addToCart)="onAddToCart($event)"
+        />
+      }
+    }
+  }
+</div>

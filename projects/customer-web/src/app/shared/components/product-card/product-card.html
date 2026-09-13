@@ -1,0 +1,95 @@
+<div
+  class="relative w-40 shrink-0 sm:w-60 rounded-2xl border font-poppins border-slate-200 bg-white p-3 shadow-sm"
+>
+  <div class="relative aspect-square overflow-hidden rounded-xl bg-slate-100">
+    @if (product().imageUrl) {
+      <img [src]="product().imageUrl" [alt]="product().name" class="h-full w-full object-cover" />
+    } @else {
+      <div class="flex h-full w-full items-center justify-center text-slate-300">
+        <svg
+          class="h-10 w-10"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3h18v18H3V3z"
+          />
+        </svg>
+      </div>
+    }
+
+    @if (product().featured) {
+      <span
+        class="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm"
+      >
+        Season <span aria-hidden="true">🔥</span>
+      </span>
+    }
+
+    <button
+      type="button"
+      (click)="onToggleFavorite()"
+      class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm"
+      [attr.aria-label]="isFavorite() ? 'Remove from favorites' : 'Add to favorites'"
+    >
+      @if (isFavorite()) {
+        <svg class="h-4 w-4 text-rose-500" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            d="M9.653 16.916l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.128 12.769 2 10.446 2 7.375 2 5.005 3.888 3 6.25 3c1.301 0 2.517.635 3.28 1.658L10 5.185l.47-.527A4.317 4.317 0 0113.75 3C16.112 3 18 5.005 18 7.375c0 3.071-2.128 5.394-3.885 6.946a22.045 22.045 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z"
+          />
+        </svg>
+      } @else {
+        <svg
+          class="h-4 w-4 text-slate-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="1.8"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+          />
+        </svg>
+      }
+    </button>
+  </div>
+
+  <p class="mt-3 line-clamp-2 text-sm font-semibold font-poppins leading-snug text-slate-900">
+    {{ product().name }}
+  </p>
+
+  <div class="mt-2 flex items-center justify-between">
+    @if (displayVariant(); as variant) {
+      <p class="text-base font-bold text-slate-900">
+        @if (hasMultipleVariants()) {
+          From ${{ variant.price.toFixed(2) }}
+        } @else {
+          ${{ variant.price.toFixed(2) }}
+        }
+      </p>
+
+      <button
+        type="button"
+        (click)="onAddToCart()"
+        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-white transition-colors hover:bg-slate-800"
+        aria-label="Add to cart"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fill-rule="evenodd"
+            d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </button>
+    } @else {
+      <p class="text-sm text-slate-400">Unavailable</p>
+    }
+  </div>
+</div>

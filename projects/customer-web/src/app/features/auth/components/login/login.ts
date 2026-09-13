@@ -5,6 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { CustomerLoginRequest } from '../../../../../../../../libs/api/customer/customer-api.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { saveAuth } from '../../../../libs/auth/auth-storage.util';
 
 @Component({
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
@@ -56,10 +57,11 @@ export class Login {
     this.authApi.login(request).subscribe({
       next: (res) => {
         this.isLoading.set(false);
-        const storage = this.loginForm.value.rememberMe ? localStorage : sessionStorage;
-        storage.setItem('token', res.token);
-        storage.setItem('tokenType', res.tokenType);
-        storage.setItem('customerResponse', JSON.stringify(res.customer));
+        saveAuth({
+          token: res.token,
+          tokenType: res.tokenType,
+          customer: res.customer,
+        });
         this.router.navigate(['/']);
       },
       error: (err: HttpErrorResponse) => {
