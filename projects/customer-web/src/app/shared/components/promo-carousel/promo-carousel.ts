@@ -6,8 +6,8 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { ProductCard } from '../product-card/product-card';
 import { ProductResponse } from '../../../../../../../libs/models/product/product-response.model';
+import { ProductCard } from '../product-card/product-card';
 
 @Component({
   selector: 'app-promo-carousel',

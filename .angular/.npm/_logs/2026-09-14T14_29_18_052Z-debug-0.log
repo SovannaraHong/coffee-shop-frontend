@@ -1,0 +1,18 @@
+0 verbose cli /home/akira/.nvm/versions/node/v22.23.2/bin/node /home/akira/.nvm/versions/node/v22.23.2/lib/node_modules/npm/bin/npm-cli.js
+1 info using npm@10.9.8
+2 info using node@v22.23.2
+3 silly config load:file:/home/akira/.nvm/versions/node/v22.23.2/lib/node_modules/npm/npmrc
+4 silly config load:file:/mnt/Data/Workplace/Project java/coffee-shop/coffee-shop-front/.npmrc
+5 silly config load:file:/mnt/Data/Workplace/Project java/coffee-shop/coffee-shop-front/.angular/.npmrc
+6 silly config load:file:/home/akira/.nvm/versions/node/v22.23.2/etc/npmrc
+7 verbose title npm exec ng build customer-web --configuration development
+8 verbose argv "exec" "--" "ng" "build" "customer-web" "--configuration" "development"
+9 verbose logfile logs-max:10 dir:/mnt/Data/Workplace/Project java/coffee-shop/coffee-shop-front/.angular/.npm/_logs/2026-09-14T14_29_18_052Z-
+10 verbose logfile /mnt/Data/Workplace/Project java/coffee-shop/coffee-shop-front/.angular/.npm/_logs/2026-09-14T14_29_18_052Z-debug-0.log
+11 silly logfile done cleaning log files
+12 verbose cwd /mnt/Data/Workplace/Project java/coffee-shop/coffee-shop-front
+13 verbose os Linux 7.0.0-31-generic
+14 verbose node v22.23.2
+15 verbose npm  v10.9.8
+16 verbose exit 1
+17 verbose code 1

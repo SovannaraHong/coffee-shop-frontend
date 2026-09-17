@@ -123,7 +123,7 @@ export class Signup {
       )
       .subscribe({
         next: () => {
-          this.router.navigate(['/verify-otp'], {
+          this.router.navigate(['front/verify-otp'], {
             queryParams: { email: request.email },
           });
         },

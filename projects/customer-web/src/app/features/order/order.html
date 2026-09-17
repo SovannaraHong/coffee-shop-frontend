@@ -1,0 +1,53 @@
+<div
+  class="fixed inset-0 z-[6000] flex justify-end font-poppins"
+  [class.pointer-events-none]="!orders.isOpen()"
+>
+  <!-- backdrop -->
+  <div
+    class="absolute inset-0 bg-black/40 transition-opacity duration-300"
+    [class.opacity-100]="orders.isOpen()"
+    [class.opacity-0]="!orders.isOpen()"
+    (click)="orders.close()"
+  ></div>
+
+  <!-- panel: slides right -> left, 90% wide on mobile, narrower on larger screens -->
+  <aside
+    class="relative h-full w-[90%] sm:w-[85%] md:w-[75%] lg:w-[65%] xl:max-w-4xl bg-white shadow-[0_0_40px_rgba(0,0,0,0.2)] overflow-y-auto p-8 md:p-10 transition-transform duration-300 ease-out"
+    [class.translate-x-0]="orders.isOpen()"
+    [class.translate-x-full]="!orders.isOpen()"
+  >
+    <button
+      (click)="orders.close()"
+      class="flex items-center gap-1 text-xs font-semibold tracking-wide text-[#7a6a5e] hover:text-[#3f2a1d] transition-colors mb-8"
+    >
+      <svg
+        class="w-3.5 h-3.5"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M15 18l-6-6 6-6" />
+      </svg>
+      BACK TO STORE
+    </button>
+
+    <h1 class="text-3xl font-light text-[#3f2a1d] mb-8">Your orders</h1>
+
+    @if (orders.orders().length) {
+      <div class="divide-y divide-[#e3d9cf]">
+        @for (order of orders.orders(); track order.id) {
+          <div class="py-5 flex items-center justify-between">
+            <div>
+              <p class="text-sm font-semibold text-[#3f2a1d]">Order #{{ order.id }}</p>
+              <p class="text-xs text-[#a89484] mt-0.5">{{ order.placedAt }} · {{ order.status }}</p>
+            </div>
+            <span class="text-sm font-semibold text-[#3f2a1d]">{{ order.total.toFixed(2) }} €</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="text-sm text-[#a89484]">You haven't placed any orders yet.</p>
+    }
+  </aside>
+</div>

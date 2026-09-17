@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  NgZone,
   OnDestroy,
   PLATFORM_ID,
   ViewChild,
@@ -23,13 +24,16 @@ interface PromoCard {
   ctaLabel: string;
   imageUrl: string;
 }
+
 @Component({
   imports: [],
   selector: 'app-product-carousel',
   templateUrl: './product-carousel.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProductCarousel {
+export class ProductCarousel implements AfterViewInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly ngZone = inject(NgZone);
 
   // ============================================
   // SWIPER ELEMENT
@@ -47,21 +51,19 @@ export class ProductCarousel {
       title: 'Free Upgrade with Visa',
       subtitle: 'Available for Visa Platinum or Infinite Cardholders',
       ctaLabel: 'Learn More',
-      imageUrl: '/assets/images/promotion/pro-1.jpg',
+      imageUrl: '/assets/images/promotion/pro-1.webp',
     },
-
     {
       title: 'Matcha Series',
       subtitle: 'Discover our new iced matcha favorites',
       ctaLabel: 'Order Now',
-      imageUrl: '/assets/images/promotion/pro-2.jpg',
+      imageUrl: '/assets/images/promotion/pro-2.webp',
     },
-
     {
       title: 'Special Rewards',
       subtitle: 'Exclusive double star points this week',
       ctaLabel: 'Explore',
-      imageUrl: '/assets/images/promotion/pro-3.jpg',
+      imageUrl: '/assets/images/promotion/pro-3.webp',
     },
   ];
 
@@ -109,83 +111,100 @@ export class ProductCarousel {
       return;
     }
 
-    this.swiper = new Swiper(this.swiperContainer.nativeElement, {
-      modules: [Autoplay],
+    // ========================================
+    // IMPORTANT: run outside Angular's zone
+    // ========================================
+    //
+    // Swiper triggers a LOT of internal work on
+    // touchmove / rAF / autoplay ticks. If this
+    // runs inside Angular's zone, Zone.js patches
+    // fire change detection on every single one
+    // of those events across the WHOLE app tree,
+    // not just this component. That's usually the
+    // real cause of "slow swiper" in Angular apps.
+    //
+    // We only re-enter the zone (via ngZone.run)
+    // when we actually need to update component
+    // state that the template reads (activeIndex).
 
-      // ========================================
-      // MOBILE
-      // ========================================
+    this.ngZone.runOutsideAngular(() => {
+      this.swiper = new Swiper(this.swiperContainer.nativeElement, {
+        modules: [Autoplay],
 
-      slidesPerView: 1.15,
-      spaceBetween: 16,
+        // ========================================
+        // MOBILE
+        // ========================================
 
-      // ========================================
-      // RESPONSIVE
-      // ========================================
+        slidesPerView: 1.15,
+        spaceBetween: 16,
 
-      breakpoints: {
-        // Tablet
-        640: {
-          slidesPerView: 1.6,
-          spaceBetween: 20,
+        // ========================================
+        // RESPONSIVE
+        // ========================================
+
+        breakpoints: {
+          // Tablet
+          640: {
+            slidesPerView: 1.6,
+            spaceBetween: 20,
+          },
+
+          // Desktop
+          1024: {
+            slidesPerView: 2.2,
+            spaceBetween: 24,
+          },
         },
 
-        // Desktop
-        1024: {
-          slidesPerView: 2.2,
-          spaceBetween: 24,
-        },
-      },
+        // ========================================
+        // LOOP
+        // ========================================
+        //
+        // Use Swiper's native loop instead of a
+        // manual reachEnd -> setTimeout -> slideTo(0)
+        // hack. Native loop runs on Swiper's own
+        // internal transition engine, so it doesn't
+        // race with autoplay's timer or stack up
+        // stray setTimeout calls if the user swipes
+        // back and forth near the last slide.
 
-      // Only 3 cards.
-      // Don't use loop.
-      loop: false,
+        loop: true,
 
-      speed: 700,
+        speed: 700,
 
-      // ========================================
-      // AUTOPLAY
-      // ========================================
+        // ========================================
+        // AUTOPLAY
+        // ========================================
 
-      autoplay: {
-        delay: 4000,
-        disableOnInteraction: false,
-        pauseOnMouseEnter: true,
-      },
-
-      allowTouchMove: true,
-      grabCursor: true,
-
-      // ========================================
-      // EVENTS
-      // ========================================
-
-      on: {
-        init: (swiper) => {
-          this.activeIndex.set(swiper.activeIndex);
+        autoplay: {
+          delay: 4000,
+          disableOnInteraction: false,
+          pauseOnMouseEnter: true,
         },
 
-        slideChange: (swiper) => {
-          this.activeIndex.set(swiper.activeIndex);
+        allowTouchMove: true,
+        grabCursor: true,
+
+        // ========================================
+        // EVENTS
+        // ========================================
+
+        on: {
+          init: (swiper) => {
+            this.ngZone.run(() => {
+              this.activeIndex.set(swiper.realIndex);
+            });
+          },
+
+          slideChange: (swiper) => {
+            this.ngZone.run(() => {
+              // realIndex accounts for the duplicated
+              // slides that loop mode creates internally
+              this.activeIndex.set(swiper.realIndex);
+            });
+          },
         },
-
-        reachEnd: (swiper) => {
-          // Restart from first slide after
-          // reaching the last slide.
-
-          setTimeout(() => {
-            if (!this.swiper) {
-              return;
-            }
-
-            if (!isPlatformBrowser(this.platformId)) {
-              return;
-            }
-
-            swiper.slideTo(0, 700);
-          }, 4000);
-        },
-      },
+      });
     });
   }
 
@@ -198,7 +217,7 @@ export class ProductCarousel {
       return;
     }
 
-    this.swiper.slideTo(index, 700);
+    this.swiper.slideToLoop(index, 700);
   }
 
   // ============================================

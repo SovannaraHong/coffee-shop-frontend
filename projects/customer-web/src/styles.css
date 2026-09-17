@@ -4,37 +4,14 @@
 
 @font-face {
   font-family: 'Inter';
-  src: url('/fonts/Inter/static/Inter_24pt-Regular.ttf') format('truetype');
+  src: url('/assets/fonts/Inter/static/Inter_24pt-Regular.ttf') format('truetype');
   font-weight: 400;
 }
 
 @font-face {
-  font-family: 'Inter';
-  src: url('/fonts/Inter/static/Inter_24pt-Medium.ttf') format('truetype');
-  font-weight: 500;
-}
-
-@font-face {
-  font-family: 'Inter';
-  src: url('/fonts/Inter/static/Inter_24pt-SemiBold.ttf') format('truetype');
-  font-weight: 600;
-}
-
-@font-face {
-  font-family: 'Inter';
-  src: url('/fonts/Inter/static/Inter_24pt-Bold.ttf') format('truetype');
-  font-weight: 700;
-}
-
-@font-face {
   font-family: 'Roboto';
-  src: url('/fonts/Roboto/static/Roboto-Bold.ttf') format('truetype');
-  font-weight: 700;
-}
-@font-face {
-  font-family: 'Poppins';
-  src: url('/fonts/popins/Poppins.ttf') format('truetype');
-  font-weight: 700;
+  src: url('/assets/fonts/Roboto/static/Roboto-Regular.ttf') format('truetype');
+  font-weight: 400;
 }
 .font-poppins {
   font-family: 'Poppins', sans-serif;
@@ -46,6 +23,6 @@
 .font-roboto {
   font-family: 'Roboto', sans-serif;
 }
-.font-script {
+/* .font-script {
   font-family: 'Dancing Script', cursive;
-}
+} */

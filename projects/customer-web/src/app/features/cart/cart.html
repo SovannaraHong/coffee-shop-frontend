@@ -1,0 +1,183 @@
+<div
+  class="fixed inset-0 z-[6000] flex justify-end font-poppins"
+  [class.pointer-events-none]="!cart.isOpen()"
+>
+  <!-- backdrop -->
+  <div
+    class="absolute inset-0 bg-black/40 transition-opacity duration-300"
+    [class.opacity-100]="cart.isOpen()"
+    [class.opacity-0]="!cart.isOpen()"
+    (click)="cart.close()"
+  ></div>
+
+  <!-- panel: slides right -> left, 90% wide on mobile, ~65-80% on larger screens -->
+  <aside
+    class="relative h-full w-[90%] sm:w-[85%] md:w-[75%] lg:w-[65%] xl:max-w-4xl bg-white shadow-[0_0_40px_rgba(0,0,0,0.2)] flex flex-col md:flex-row overflow-hidden transition-transform duration-300 ease-out"
+    [class.translate-x-0]="cart.isOpen()"
+    [class.translate-x-full]="!cart.isOpen()"
+  >
+    <!-- Cart items -->
+    <div class="flex-1 overflow-y-auto p-8 md:p-10">
+      <button
+        (click)="cart.close()"
+        class="flex items-center gap-1 text-xs font-semibold tracking-wide text-[#7a6a5e] hover:text-[#3f2a1d] transition-colors mb-8"
+      >
+        <svg
+          class="w-3.5 h-3.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+        BACK TO STORE
+      </button>
+
+      <div class="flex items-baseline justify-between mb-8">
+        <h1 class="text-3xl font-light text-[#3f2a1d]">Shopping cart</h1>
+        <span class="text-xs font-semibold tracking-wide text-[#a97a5a]">
+          {{ cart.itemCount() }} ITEM{{ cart.itemCount() === 1 ? '' : 'S' }}
+        </span>
+      </div>
+
+      <div
+        class="hidden sm:grid grid-cols-[2fr_0.7fr_0.9fr_0.6fr_0.3fr] gap-4 text-[11px] font-semibold tracking-widest text-[#a89484] uppercase pb-3 border-b border-[#e3d9cf]"
+      >
+        <span>Item</span>
+        <span>Variant</span>
+        <span>Quantity</span>
+        <span>Price</span>
+        <span></span>
+      </div>
+
+      <div class="divide-y divide-[#e3d9cf]">
+        @for (
+          item of cart.cartItems();
+          track item.productId + '-' + item.variantId + '-' + $index;
+          let i = $index
+        ) {
+          <div class="grid grid-cols-[2fr_0.7fr_0.9fr_0.6fr_0.3fr] items-center gap-4 py-5">
+            <div class="flex items-center gap-4">
+              <img
+                [src]="item.imageUrl || '/assets/images/placeholder.webp'"
+                [alt]="item.productName"
+                class="w-14 h-14 object-cover rounded-lg bg-[#faf6f0]"
+              />
+              <div>
+                <p class="text-sm font-semibold text-[#3f2a1d]">{{ item.productName }}</p>
+                @if (item.addons.length) {
+                  <p class="text-[11px] text-[#a97a5a] mt-0.5">
+                    +
+                    @for (addon of item.addons; track addon.addonId; let last = $last) {
+                      {{ addon.addonName }}{{ addon.quantity > 1 ? ' x' + addon.quantity : ''
+                      }}{{ last ? '' : ', ' }}
+                    }
+                  </p>
+                }
+              </div>
+            </div>
+
+            <span class="text-sm text-[#7a6a5e]">{{ item.variantName }}</span>
+
+            <div class="flex items-center gap-3">
+              <button
+                (click)="cart.decrementItem(i)"
+                class="w-6 h-6 rounded-full border border-[#e3d9cf] text-[#a97a5a] flex items-center justify-center hover:border-[#3f2a1d] hover:text-[#3f2a1d] transition-colors"
+              >
+                −
+              </button>
+              <span class="text-sm text-[#3f2a1d] w-3 text-center">{{ item.quantity }}</span>
+              <button
+                (click)="cart.incrementItem(i)"
+                class="w-6 h-6 rounded-full border border-[#e3d9cf] text-[#a97a5a] flex items-center justify-center hover:border-[#3f2a1d] hover:text-[#3f2a1d] transition-colors"
+              >
+                +
+              </button>
+            </div>
+
+            <span class="text-sm font-semibold text-[#3f2a1d]">
+              {{ item.subtotal.toFixed(2) }} €
+            </span>
+
+            <button
+              (click)="cart.removeItem(i)"
+              class="justify-self-end text-[#a89484] hover:text-[#b3443c] transition-colors"
+            >
+              <svg
+                class="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M18 6 6 18" />
+                <path d="M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        } @empty {
+          <p class="py-10 text-center text-sm text-[#a89484]">Your cart is empty.</p>
+        }
+      </div>
+
+      <p class="mt-8 text-xs text-[#a89484]">Free shipping for all orders over 50 €</p>
+    </div>
+
+    <!-- Summary -->
+    <div
+      class="w-full md:w-[340px] shrink-0 bg-[#faf6f0] border-t md:border-t-0 md:border-l border-[#e3d9cf] p-8 md:p-10 flex flex-col"
+    >
+      <button
+        (click)="cart.close()"
+        class="self-end mb-6 text-[#7a6a5e] hover:text-[#3f2a1d] transition-colors"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18" />
+          <path d="M6 6l12 12" />
+        </svg>
+      </button>
+
+      <h2 class="text-lg font-semibold text-[#3f2a1d] mb-6">Summary</h2>
+
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between text-[#7a6a5e]">
+          <span>Subtotal</span>
+          <span class="text-[#3f2a1d] font-medium">{{ cart.subtotal().toFixed(2) }} €</span>
+        </div>
+        <div class="flex justify-between text-[#7a6a5e]">
+          <span>Shipping</span>
+          <span class="text-[#3f2a1d] font-medium">{{ cart.shipping().toFixed(2) }} €</span>
+        </div>
+        <div class="flex justify-between text-[#7a6a5e]">
+          <span>Tax</span>
+          <span class="text-[#3f2a1d] font-medium">{{ cart.tax().toFixed(2) }} €</span>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <label class="text-[11px] font-semibold tracking-widest text-[#a89484] uppercase">
+          Promocode
+        </label>
+        <input
+          type="text"
+          placeholder="enter code"
+          class="mt-2 w-full bg-transparent border-b border-[#e3d9cf] text-sm text-[#3f2a1d] placeholder:text-[#c9bcae] outline-none py-2"
+        />
+      </div>
+
+      <div class="flex-1"></div>
+
+      <div class="flex justify-between items-baseline pt-6 border-t border-[#e3d9cf] mb-6">
+        <span class="text-base font-semibold text-[#3f2a1d]">Total</span>
+        <span class="text-xl font-semibold text-[#3f2a1d]">{{ cart.total().toFixed(2) }} €</span>
+      </div>
+
+      <button
+        class="w-full bg-[#3f2a1d] text-white text-sm font-semibold tracking-wide rounded-full py-3.5 hover:bg-[#2e1f15] transition-colors"
+      >
+        CHECKOUT
+      </button>
+    </div>
+  </aside>
+</div>

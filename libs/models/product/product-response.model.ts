@@ -1,3 +1,4 @@
+import { AddonResponse } from './../addon/addon-response.model';
 import { VariantResponse } from '../variant/variant-response.model';
 
 export interface ProductResponse {
@@ -10,4 +11,5 @@ export interface ProductResponse {
   categoryId: number;
   categoryName: string;
   variants: VariantResponse[];
+  addons: AddonResponse[];
 }
