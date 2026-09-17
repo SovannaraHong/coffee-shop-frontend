@@ -46,7 +46,7 @@ export class VerifyOtp {
       next: (res) => {
         this.isLoading.set(false);
         this.successMessage.set(res.message || 'Account verified.');
-        setTimeout(() => this.router.navigate(['/login']), 1200);
+        setTimeout(() => this.router.navigate(['front/login']), 1200);
       },
       error: (err: HttpErrorResponse) => {
         this.isLoading.set(false);

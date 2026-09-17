@@ -1,3 +1,4 @@
+import { CartService } from './../../../../../../libs/models/cart/cart.service';
 import {
   Component,
   ElementRef,
@@ -9,9 +10,10 @@ import {
 } from '@angular/core';
 
 import { isPlatformBrowser } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { CustomerResponse } from '../../../../../../libs/api/customer/customer-api.model';
+import { OrdersService } from '../../../../../../libs/models/order/order.service';
 
 interface NavLink {
   label: string;
@@ -27,12 +29,14 @@ interface UserMenuItem {
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './navbar.html',
   styleUrl: './navbar.css',
 })
 export class Navbar implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
+  cartService = inject(CartService);
+  ordersService = inject(OrdersService);
 
   navLinks: NavLink[] = [
     {
@@ -41,20 +45,27 @@ export class Navbar implements OnInit {
     },
     {
       label: 'Menu',
-      route: '/menu',
+      route: 'front/menu-page',
     },
     {
       label: 'About Us',
-      route: '/about',
+      route: 'front/about',
     },
     {
       label: 'Locations',
-      route: '/locations',
+      route: 'front/locations',
     },
     {
       label: 'Contact',
-      route: '/contact',
+      route: 'front/contact',
     },
+  ];
+  categoryLinks = [
+    { label: 'Popular', route: 'front/popular' },
+    { label: 'Coffee', route: 'front/coffee' },
+    { label: 'Rewards', route: 'front/rewards' },
+    { label: 'Gift Card', route: 'front/gift-card' },
+    { label: 'Promotion', route: 'front/promotion' },
   ];
 
   currentUser = signal<CustomerResponse | null>(null);
@@ -149,15 +160,15 @@ export class Navbar implements OnInit {
 
     switch (action) {
       case 'profile':
-        this.router.navigate(['/profile']);
+        this.router.navigate(['front/profile']);
         break;
 
       case 'orders':
-        this.router.navigate(['/orders']);
+        this.router.navigate(['front/orders']);
         break;
 
       case 'favorites':
-        this.router.navigate(['/favorites']);
+        this.router.navigate(['front/favorites']);
         break;
     }
   }
@@ -178,7 +189,7 @@ export class Navbar implements OnInit {
 
     this.currentUser.set(null);
 
-    this.router.navigate(['/login']);
+    this.router.navigate(['front/login']);
   }
 
   @HostListener('document:click', ['$event'])

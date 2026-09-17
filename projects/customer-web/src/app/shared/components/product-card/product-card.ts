@@ -1,8 +1,9 @@
 import { ProductResponse } from './../../../../../../../libs/models/product/product-response.model';
 import { Component, computed, input, output } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 @Component({
-  imports: [],
+  imports: [RouterLink],
   selector: 'app-product-card',
   styleUrl: './product-card.css',
   templateUrl: './product-card.html',
@@ -14,8 +15,6 @@ export class ProductCard {
   readonly toggleFavorite = output<number>();
   readonly addToCart = output<number>();
 
-  // Picks the cheapest active variant to display as the card's price.
-  // Adjust this if you actually want a specific "default" variant instead.
   readonly displayVariant = computed(() => {
     const activeVariants = this.product().variants.filter((v) => v.isActive);
     if (activeVariants.length === 0) return null;

@@ -6,18 +6,32 @@ export const routes: Routes = [
   {
     path: '',
     component: MainLayout,
-    children: [{ path: '', component: Home }],
+    children: [
+      { path: '', component: Home },
+      {
+        path: 'product/:id',
+        loadComponent: () =>
+          import('./features/product/pages/product-detail/product-detail').then(
+            (m) => m.ProductDetail,
+          ),
+      },
+      {
+        path: 'front/menu-page',
+        loadComponent: () =>
+          import('./shared/components/banner-menu/banner-menu').then((m) => m.BannerMenu),
+      },
+    ],
   },
   {
-    path: 'login',
+    path: 'front/login',
     loadComponent: () => import('./features/auth/components/login/login').then((m) => m.Login),
   },
   {
-    path: 'signup',
+    path: 'front/signup',
     loadComponent: () => import('./features/auth/components/signup/signup').then((m) => m.Signup),
   },
   {
-    path: 'verify-otp',
+    path: 'front/verify-otp',
     loadComponent: () =>
       import('./features/auth/components/verify-otp/verify-otp').then((m) => m.VerifyOtp),
   },

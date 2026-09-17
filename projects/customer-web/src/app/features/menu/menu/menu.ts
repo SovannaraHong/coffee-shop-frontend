@@ -8,6 +8,7 @@ import {
 } from '../../../shared/components/category-filter/category-filter';
 import { PromoCarousel } from '../../../shared/components/promo-carousel/promo-carousel';
 import { ProductResponse } from '../../../../../../../libs/models/product/product-response.model';
+import { BannerMenu } from '../../../shared/components/banner-menu/banner-menu';
 
 type MenuStatus = 'loading' | 'success' | 'error';
 
