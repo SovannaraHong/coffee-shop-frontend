@@ -2,7 +2,10 @@
   <div class="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6">
     @for (f of features; track f.title) {
       <div class="flex items-center gap-3">
-        <span class="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0" [ngClass]="f.bg">
+        <span
+          class="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
+          [ngClass]="f.bg"
+        >
           {{ f.icon }}
         </span>
         <div>
@@ -13,3 +16,5 @@
     }
   </div>
 </section>
+<!-- <h1>hello</h1>
+<app-qr-test /> -->

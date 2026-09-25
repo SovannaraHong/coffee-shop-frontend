@@ -3,11 +3,14 @@ const TOKEN_TYPE_KEY = 'tokenType';
 const CUSTOMER_KEY = 'customerResponse';
 const EXPIRES_AT_KEY = 'tokenExpiresAt';
 
+const isBrowser = typeof window !== 'undefined';
+
 export interface StoreAuth<TCustomer = unknown> {
   token: string;
   tokenType: string;
   customer: TCustomer;
 }
+
 function decodeJwtExpiryMs(token: string): number | null {
   try {
     const payloadSegment = token.split('.')[1];
@@ -21,7 +24,10 @@ function decodeJwtExpiryMs(token: string): number | null {
     return null;
   }
 }
+
 export function saveAuth<TCustomer>(auth: StoreAuth<TCustomer>): void {
+  if (!isBrowser) return;
+
   const decodedExpiry = decodeJwtExpiryMs(auth.token);
   const fallbackExpiry = Date.now() + 24 * 60 * 60 * 1000;
   const expiresAt = decodedExpiry ?? fallbackExpiry;
@@ -31,33 +37,60 @@ export function saveAuth<TCustomer>(auth: StoreAuth<TCustomer>): void {
   localStorage.setItem(CUSTOMER_KEY, JSON.stringify(auth.customer));
   localStorage.setItem(EXPIRES_AT_KEY, String(expiresAt));
 }
-export function loadAuth<TCustomer = unknown>(): StoreAuth<TCustomer> | null {
-  const expiresAtRaw = localStorage.getItem(EXPIRES_AT_KEY);
 
-  if (!expiresAtRaw || Date.now() > Number(expiresAtRaw)) {
-    clearAuth();
-    return null;
-  }
+// export function loadAuth<TCustomer = unknown>(): StoreAuth<TCustomer> | null {
+//   if (!isBrowser) return null;
+
+//   const expiresAtRaw = localStorage.getItem(EXPIRES_AT_KEY);
+
+//   if (!expiresAtRaw || Date.now() > Number(expiresAtRaw)) {
+//     clearAuth();
+//     return null;
+//   }
+
+//   const token = localStorage.getItem(TOKEN_KEY);
+//   const tokenType = localStorage.getItem(TOKEN_TYPE_KEY);
+//   const customerRaw = localStorage.getItem(CUSTOMER_KEY);
+
+//   if (!token || !tokenType || !customerRaw) {
+//     clearAuth();
+//     return null;
+//   }
+
+//   try {
+//     const customer = JSON.parse(customerRaw) as TCustomer;
+//     return { token, tokenType, customer };
+//   } catch {
+//     clearAuth();
+//     return null;
+//   }
+// }
+export function loadAuth<TCustomer = unknown>(): StoreAuth<TCustomer> | null {
+  if (!isBrowser) return null;
 
   const token = localStorage.getItem(TOKEN_KEY);
   const tokenType = localStorage.getItem(TOKEN_TYPE_KEY);
   const customerRaw = localStorage.getItem(CUSTOMER_KEY);
 
   if (!token || !tokenType || !customerRaw) {
-    clearAuth();
     return null;
   }
 
   try {
     const customer = JSON.parse(customerRaw) as TCustomer;
-    return { token, tokenType, customer };
+
+    return {
+      token,
+      tokenType,
+      customer,
+    };
   } catch {
-    clearAuth();
     return null;
   }
 }
-
 export function clearAuth(): void {
+  if (!isBrowser) return;
+
   for (const key of [TOKEN_KEY, TOKEN_TYPE_KEY, CUSTOMER_KEY, EXPIRES_AT_KEY]) {
     localStorage.removeItem(key);
     sessionStorage.removeItem(key);

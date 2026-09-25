@@ -1,0 +1,182 @@
+<div
+  class="fixed inset-0 z-[8000] flex items-center justify-center px-4"
+  role="dialog"
+  aria-modal="true"
+>
+  <div
+    class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+    (click)="status === 'PENDING' ? null : close()"
+  ></div>
+
+  <div
+    class="relative w-full max-w-[360px] bg-white rounded-xl shadow-2xl overflow-hidden font-sans"
+  >
+    <div
+      class="relative h-[80px] bg-[#E1191E] flex items-center justify-center pb-4"
+      style="
+        clip-path: polygon(
+          0 0,
+          100% 0,
+          100% 100%,
+          calc(100% - 24px) calc(100% - 18px),
+          0 calc(100% - 18px)
+        );
+      "
+    >
+      <button
+        type="button"
+        (click)="close()"
+        class="absolute top-3.5 right-3.5 z-10 text-white/80 hover:text-white transition-colors"
+        aria-label="Close payment"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6 6 18" />
+          <path d="M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- KHQR Logo -->
+      <img src="/assets/images/KHQR - asset/KHQR Logo.svg" alt="KHQR" class="h-6 w-auto" />
+    </div>
+
+    <!-- Main Content -->
+    <div class="px-6 pt-3 pb-6">
+      <!-- Merchant Info -->
+      <div class="mb-4">
+        <p class="text-sm text-gray-800 font-normal leading-tight">
+          {{ storeName }}
+        </p>
+
+        <div class="flex items-baseline gap-2 mt-1">
+          <span class="text-3xl font-extrabold text-black tracking-tight">
+            {{ amount.toFixed(2) }}
+          </span>
+          <span class="text-sm font-semibold text-gray-700"> USD </span>
+        </div>
+      </div>
+
+      <!-- Dashed Line Separator -->
+      <div class="border-b border-dashed border-gray-300 my-5 -mx-6"></div>
+
+      <!-- Pending State -->
+      @if (status === 'PENDING') {
+        <div class="flex flex-col items-center">
+          <!-- QR Container -->
+          <div class="relative w-full flex items-center justify-center p-2">
+            @if (isBrowser) {
+              <qrcode
+                [qrdata]="qrString"
+                [width]="250"
+                [errorCorrectionLevel]="'M'"
+                elementType="svg"
+              ></qrcode>
+
+              <!-- Center USD Badge/Logo -->
+            } @else {
+              <div class="w-[250px] h-[250px] bg-gray-100 animate-pulse rounded-md"></div>
+            }
+          </div>
+
+          <!-- Scan Instruction -->
+          <p class="text-center text-xs text-gray-500 mt-4 mb-3">
+            Scan with any KHQR-enabled banking app
+          </p>
+
+          <!-- Expiration Badge -->
+          <span
+            class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-full px-3 py-1"
+          >
+            <svg
+              class="w-3.5 h-3.5 text-gray-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 6v6l4 2" />
+            </svg>
+
+            Expires in {{ formattedTime() }}
+          </span>
+        </div>
+      }
+
+      <!-- Paid State -->
+      @if (status === 'PAID') {
+        <div class="flex flex-col items-center py-8">
+          <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mb-3">
+            <svg
+              class="w-7 h-7 text-green-600"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </div>
+
+          <p class="text-base font-semibold text-gray-800">Payment successful</p>
+        </div>
+      }
+
+      <!-- Expired State -->
+      @if (status === 'EXPIRED') {
+        <div class="flex flex-col items-center py-8">
+          <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-3">
+            <svg
+              class="w-7 h-7 text-red-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 8v5" />
+              <path d="M12 16h.01" />
+            </svg>
+          </div>
+
+          <p class="text-base font-semibold text-red-600 mb-3">QR code expired</p>
+
+          <button
+            type="button"
+            (click)="close()"
+            class="text-xs font-semibold text-gray-700 hover:underline"
+          >
+            Close and try again
+          </button>
+        </div>
+      }
+
+      <!-- Failed State -->
+      @if (status === 'FAILED') {
+        <div class="flex flex-col items-center py-8">
+          <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-3">
+            <svg
+              class="w-7 h-7 text-red-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M18 6 6 18" />
+              <path d="M6 6l12 12" />
+            </svg>
+          </div>
+
+          <p class="text-base font-semibold text-red-600 mb-3">Payment failed</p>
+
+          <button
+            type="button"
+            (click)="close()"
+            class="text-xs font-semibold text-gray-700 hover:underline"
+          >
+            Close and try again
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>

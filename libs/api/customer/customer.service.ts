@@ -1,19 +1,19 @@
-import { VerifyOtpRequest } from './../otp/otp-api-model';
+import { VerifyOtpRequest } from '../../models/otp/otp-api-model';
 import { inject, Injectable } from '@angular/core';
 import { ApiClient } from '../api-client';
 import { API_URL } from '../api-config';
+
+import { Observable } from 'rxjs';
 import {
   CustomerLoginRequest,
   CustomerRegisterRequest,
-  CustomerResponse,
-  LoginResponse,
-} from './customer-api.model';
-import { Observable } from 'rxjs';
+} from '../../models/customer/customer-request.model';
+import { CustomerResponse, LoginResponse } from '../../models/customer/customer-response.model';
 
 @Injectable({
   providedIn: 'root',
 })
-export class CustomerApiService {
+export class CustomerService {
   private readonly apiClient = inject(ApiClient);
   private readonly apiUrl = inject(API_URL);
 

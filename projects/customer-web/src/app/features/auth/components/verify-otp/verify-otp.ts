@@ -1,9 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { CustomerApiService } from '../../../../../../../../libs/api/customer/customer-api.service';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { VerifyOtpRequest } from '../../../../../../../../libs/api/otp/otp-api-model';
+import { VerifyOtpRequest } from '../../../../../../../../libs/models/otp/otp-api-model';
 import { HttpErrorResponse } from '@angular/common/http';
+import { CustomerService } from '../../../../../../../../libs/api/customer/customer.service';
 
 @Component({
   imports: [ReactiveFormsModule, RouterModule],
@@ -12,7 +12,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 })
 export class VerifyOtp {
   private readonly fb = inject(FormBuilder);
-  private readonly authApi = inject(CustomerApiService);
+  private readonly authApi = inject(CustomerService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 

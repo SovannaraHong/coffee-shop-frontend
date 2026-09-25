@@ -1,4 +1,4 @@
-import { CartService } from './../../../../../../libs/models/cart/cart.service';
+import { CustomerResponse } from './../../../../../../libs/models/customer/customer-response.model';
 import {
   Component,
   ElementRef,
@@ -12,8 +12,8 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
-import { CustomerResponse } from '../../../../../../libs/api/customer/customer-api.model';
-import { OrdersService } from '../../../../../../libs/models/order/order.service';
+import { CartService } from '../../../../../../libs/services/cart/cart.service';
+import { OrderService } from '../../../../../../libs/services/order/order.service';
 
 interface NavLink {
   label: string;
@@ -36,7 +36,7 @@ interface UserMenuItem {
 export class Navbar implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   cartService = inject(CartService);
-  ordersService = inject(OrdersService);
+  ordersService = inject(OrderService);
 
   navLinks: NavLink[] = [
     {

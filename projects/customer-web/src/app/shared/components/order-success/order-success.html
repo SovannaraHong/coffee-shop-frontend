@@ -1,0 +1,57 @@
+<div class="fixed inset-0 z-[7000] flex items-center justify-center px-6">
+  <div class="absolute inset-0 bg-black/40" (click)="phase() === 'success' && close()"></div>
+
+  <div
+    class="relative bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.25)] w-full max-w-sm p-10 text-center font-poppins"
+  >
+    @if (phase() === 'loading') {
+      <div class="flex flex-col items-center gap-5">
+        <div
+          class="w-14 h-14 rounded-full border-[3px] border-[#e3d9cf] border-t-[#3f2a1d] animate-spin"
+        ></div>
+        <p class="text-sm font-semibold text-[#7a6a5e]">Confirming your payment…</p>
+      </div>
+    } @else {
+      <div class="flex flex-col items-center gap-5 success-in">
+        <svg viewBox="0 0 52 52" class="w-16 h-16">
+          <circle
+            class="checkmark-circle"
+            cx="26"
+            cy="26"
+            r="24"
+            fill="none"
+            stroke="#3f8a52"
+            stroke-width="3"
+          />
+          <path
+            class="checkmark-check"
+            fill="none"
+            stroke="#3f8a52"
+            stroke-width="4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M14 27l8 8 16-16"
+          />
+        </svg>
+
+        <div>
+          <h2 class="text-lg font-semibold text-[#3f2a1d]">Payment successful</h2>
+          @if (orderNumber) {
+            <p class="text-sm text-[#7a6a5e] mt-1">Order #{{ orderNumber }}</p>
+          }
+          @if (amount) {
+            <p class="text-sm text-[#7a6a5e]">{{ amount.toFixed(2) }} $ paid</p>
+          }
+        </div>
+
+        <button
+          type="button"
+          (click)="close()"
+          class="text-sm font-semibold text-[#a97a5a] hover:text-[#3f2a1d] transition-colors"
+        >
+          Done
+        </button>
+      </div>
+    }
+  </div>
+</div>

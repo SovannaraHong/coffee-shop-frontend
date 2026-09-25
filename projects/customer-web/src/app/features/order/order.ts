@@ -1,6 +1,5 @@
-import { OrdersService } from './../../../../../../libs/models/order/order.service';
+import { OrderService } from './../../../../../../libs/services/order/order.service';
 import { Component, signal } from '@angular/core';
-import { Router } from '@angular/router';
 
 @Component({
   imports: [],
@@ -8,5 +7,5 @@ import { Router } from '@angular/router';
   templateUrl: './order.html',
 })
 export class Order {
-  constructor(public orders: OrdersService) {}
+  constructor(public orders: OrderService) {}
 }

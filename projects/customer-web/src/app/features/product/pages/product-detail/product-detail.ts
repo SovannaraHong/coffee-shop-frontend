@@ -2,7 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, switchMap } from 'rxjs';
-import { ProductApiService } from '../../../../../../../../libs/api/product/product-api.service';
+import { CartItem } from '../../../../../../../../libs/models/cart/cart-item.model';
+import { ProductService } from '../../../../../../../../libs/api/product/product.service';
+import { CartService } from '../../../../../../../../libs/services/cart/cart.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -12,7 +14,8 @@ import { ProductApiService } from '../../../../../../../../libs/api/product/prod
 })
 export class ProductDetail {
   private readonly route = inject(ActivatedRoute);
-  private readonly productService = inject(ProductApiService);
+  private readonly productService = inject(ProductService);
+  private readonly cart = inject(CartService);
 
   readonly product = toSignal(
     this.route.paramMap.pipe(
@@ -88,19 +91,34 @@ export class ProductDetail {
 
   addToCart(): void {
     const variant = this.selectedVariant();
-    if (!variant) {
+    const product = this.product();
+    if (!variant || !product) {
       alert('Please select a size.');
       return;
     }
 
-    console.log('Add to cart:', {
-      product: this.product(),
-      variant,
-      addons: this.selectedAddons(),
-      quantity: this.quantity(),
-      subtotal: this.subtotal(),
-    });
+    const item: CartItem = {
+      productId: product.id,
+      productName: product.name,
+      imageUrl: product.imageUrl ?? undefined,
 
-    alert(`${variant.name} added to cart. Quantity: ${this.quantity()}`);
+      variantId: variant.id,
+      variantName: variant.name,
+      price: variant.price,
+
+      quantity: this.quantity(),
+
+      addons: this.selectedAddons().map((a) => ({
+        addonId: a.id,
+        addonName: a.name,
+        price: a.price,
+        quantity: 1,
+      })),
+
+      subtotal: this.subtotal(),
+    };
+
+    this.cart.addItem(item);
+    this.cart.showNotification(`${item.productName} added to cart`);
   }
 }

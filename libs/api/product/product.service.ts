@@ -1,17 +1,17 @@
-import { ProductRequest } from './../../models/product/product-request.model';
-import { ProductResponse } from './../../models/product/product-response.model';
-import { PageResponse } from './../../models/common/page-response.model';
-import { ProductPaginationParams } from './product-api.model';
-import { ApiClient } from './../api-client';
+import { ProductRequest } from '../../models/product/product-request.model';
+import { ProductPaginationParams } from '../../models/product/product.model';
+import { PageResponse } from '../../models/common/page-response.model';
+import { ApiClient } from '../api-client';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { API_URL } from '../api-config';
 import { Observable } from 'rxjs';
+import { ProductResponse } from '../../models/product/product-response.model';
 
 @Injectable({
   providedIn: 'root',
 })
-export class ProductApiService {
+export class ProductService {
   private readonly apiClient = inject(ApiClient);
   private readonly apiUrl = inject(API_URL);
 
