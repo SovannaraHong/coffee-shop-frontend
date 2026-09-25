@@ -1,0 +1,47 @@
+.cart-toast {
+  position: fixed;
+  top: 24px;
+  right: 0;
+  z-index: 7000;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: #3f2a1d;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.875rem 1.5rem;
+  border-radius: 6px 0 0 6px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.18),
+    0 2px 6px rgba(0, 0, 0, 0.12);
+  animation: slide-in-out 2.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+}
+
+.cart-toast__icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  color: #7fd8a8;
+}
+
+@keyframes slide-in-out {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  12% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  85% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}

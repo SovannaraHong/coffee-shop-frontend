@@ -1,4 +1,3 @@
-import { ProductApiService } from './../../../../../../../libs/api/product/product-api.service';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, Subject, switchMap } from 'rxjs';
@@ -9,6 +8,7 @@ import {
 import { PromoCarousel } from '../../../shared/components/promo-carousel/promo-carousel';
 import { ProductResponse } from '../../../../../../../libs/models/product/product-response.model';
 import { BannerMenu } from '../../../shared/components/banner-menu/banner-menu';
+import { ProductService } from '../../../../../../../libs/api/product/product.service';
 
 type MenuStatus = 'loading' | 'success' | 'error';
 
@@ -27,7 +27,7 @@ const ERROR_STATE: MenuState = { status: 'error', products: [] };
   templateUrl: './menu.html',
 })
 export class Menu {
-  private readonly productApi = inject(ProductApiService);
+  private readonly productApi = inject(ProductService);
 
   private readonly refresh$ = new Subject<void>();
 

@@ -1,3 +1,4 @@
+import { CustomerRegisterRequest } from './../../../../../../../../libs/models/customer/customer-request.model';
 import { Component, inject, signal } from '@angular/core';
 import {
   AbstractControl,
@@ -9,9 +10,7 @@ import {
 import { Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
-
-import { CustomerApiService } from '../../../../../../../../libs/api/customer/customer-api.service';
-import { CustomerRegisterRequest } from '../../../../../../../../libs/api/customer/customer-api.model';
+import { CustomerService } from '../../../../../../../../libs/api/customer/customer.service';
 
 function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
   const password = control.get('password')?.value;
@@ -32,7 +31,7 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
 })
 export class Signup {
   private readonly fb = inject(FormBuilder);
-  private readonly authApi = inject(CustomerApiService);
+  private readonly authApi = inject(CustomerService);
   private readonly router = inject(Router);
 
   readonly showPassword = signal(false);

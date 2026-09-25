@@ -1,11 +1,11 @@
-import { CustomerApiService } from './../../../../../../../../libs/api/customer/customer-api.service';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { CustomerLoginRequest } from '../../../../../../../../libs/api/customer/customer-api.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { saveAuth } from '../../../../libs/auth/auth-storage.util';
+import { saveAuth } from '../../../../core/auth/auth-storage.util';
+import { CustomerLoginRequest } from '../../../../../../../../libs/models/customer/customer-request.model';
+import { CustomerService } from '../../../../../../../../libs/api/customer/customer.service';
 
 @Component({
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
@@ -14,7 +14,7 @@ import { saveAuth } from '../../../../libs/auth/auth-storage.util';
 })
 export class Login {
   private readonly fb = inject(FormBuilder);
-  private readonly authApi = inject(CustomerApiService);
+  private readonly authApi = inject(CustomerService);
   private readonly router = inject(Router);
 
   loginForm: FormGroup;
