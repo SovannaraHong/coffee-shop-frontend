@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterLink, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { saveAuth } from '../../../../core/auth/auth-storage.util';
@@ -8,7 +8,7 @@ import { CustomerLoginRequest } from '../../../../../../../../libs/models/custom
 import { CustomerService } from '../../../../../../../../libs/api/customer/customer.service';
 
 @Component({
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, RouterLink],
   selector: 'app-login',
   templateUrl: './login.html',
 })
@@ -72,5 +72,8 @@ export class Login {
   }
   continueWithGoogle(): void {
     window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+  }
+  goToRegister() {
+    this.router.navigate(['front/signup']);
   }
 }

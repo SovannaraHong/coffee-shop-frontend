@@ -1,12 +1,16 @@
-import { Order } from './../../../projects/customer-web/src/app/features/order/order';
-import { Injectable, signal } from '@angular/core';
+import { OrderApiService } from '../../api/order/order.service';
+import { OrderResponse } from '../../models/order/order-response.model';
+import { inject, Injectable, signal } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class OrderService {
+  private readonly orderApi = inject(OrderApiService);
+
   isOpen = signal(false);
 
-  // ---- order data (replace with your real API call) ----
-  orders = signal<Order[]>([]);
+  orders = signal<OrderResponse[]>([]);
+  loading = signal(false);
+  error = signal<string | null>(null);
 
   open() {
     this.isOpen.set(true);
@@ -18,5 +22,20 @@ export class OrderService {
 
   toggle() {
     this.isOpen.update((v) => !v);
+  }
+
+  loadOrders(customerId: number) {
+    this.loading.set(true);
+    this.error.set(null);
+    this.orderApi.findByCustomer(customerId).subscribe({
+      next: (orders) => {
+        this.orders.set(orders);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set("We couldn't load your orders. Please try again.");
+        this.loading.set(false);
+      },
+    });
   }
 }
