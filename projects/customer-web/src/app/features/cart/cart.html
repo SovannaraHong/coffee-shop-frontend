@@ -167,8 +167,10 @@
       </div>
 
       <button
-        routerLink="front/checkout"
-        class="w-full bg-[#3f2a1d] text-white text-sm font-semibold tracking-wide rounded-full py-3.5 hover:bg-[#2e1f15] transition-colors"
+        type="button"
+        routerLink="/front/checkout"
+        (click)="cart.close()"
+        class="w-full bg-[#3f2a1d] cursor-pointer text-white text-sm font-semibold tracking-wide rounded-full py-3.5 hover:bg-[#2e1f15] transition-colors"
       >
         CHECKOUT
       </button>

@@ -2,5 +2,5 @@
 <router-outlet></router-outlet>
 <app-footer></app-footer>
 <app-cart />
-<app-order />
+<app-order [customerId]="auth.customerId()" />
 <app-cart-toast />

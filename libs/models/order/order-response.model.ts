@@ -7,12 +7,10 @@ export interface OrderResponse {
   customerId: number;
   customerName: string;
   status: OrderStatus;
-
   totalAmount: number;
   discountAmount: number;
   taxAmount: number;
   finalAmount: number;
-
   note?: string | null;
   orderDate: string;
 

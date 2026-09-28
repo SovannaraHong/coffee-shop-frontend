@@ -21,12 +21,18 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./shared/components/banner-menu/banner-menu').then((m) => m.BannerMenu),
       },
+      {
+        canActivate: [authGuard],
+        path: 'front/checkout',
+        loadComponent: () => import('./features/checkout/checkout').then((m) => m.Checkout),
+      },
+      {
+        canActivate: [authGuard],
+        path: 'orders/:id',
+        loadComponent: () =>
+          import('./features/order/component/order-detail/order-detail').then((m) => m.OrderDetail),
+      },
     ],
-  },
-  {
-    canActivate: [authGuard],
-    path: 'front/checkout',
-    loadComponent: () => import('./features/checkout/checkout').then((m) => m.Checkout),
   },
 
   {
