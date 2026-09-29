@@ -17,21 +17,29 @@
   >
     <!-- Cart items -->
     <div class="flex-1 overflow-y-auto p-8 md:p-10">
-      <button
-        (click)="cart.close()"
-        class="flex items-center gap-1 text-xs font-semibold tracking-wide text-[#7a6a5e] hover:text-[#3f2a1d] transition-colors mb-8"
-      >
-        <svg
-          class="w-3.5 h-3.5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
+      <div class="flex justify-between">
+        <button
+          (click)="cart.close()"
+          class="flex items-center gap-1 text-xs font-semibold tracking-wide text-[#7a6a5e] hover:text-[#3f2a1d] transition-colors mb-8"
         >
-          <path d="M15 18l-6-6 6-6" />
-        </svg>
-        BACK TO STORE
-      </button>
+          <svg
+            class="w-3.5 h-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          BACK TO STORE
+        </button>
+        <button
+          (click)="cart.clearCart()"
+          class="flex items-center gap-1 text-xs font-semibold tracking-wide text-white bg-[#7a460a] p-1.5 rounded-[5px] cursor-pointer transition-colors mb-8"
+        >
+          CLEAR CARD
+        </button>
+      </div>
 
       <div class="flex items-baseline justify-between mb-8">
         <h1 class="text-3xl text-[#3f2a1d] font-semibold font-roboto">Shopping cart</h1>
