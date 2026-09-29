@@ -33,6 +33,8 @@ export class CartService {
 
   total = computed(() => this.subtotal());
 
+  private readonly ORDER_CART_PREFIX = 'order_cart_items';
+
   constructor() {
     // Save cart whenever cartItems changes
     effect(() => {
@@ -70,6 +72,41 @@ export class CartService {
     this.notificationTimeout = setTimeout(() => {
       this.notification.set(null);
     }, duration);
+  }
+
+  saveItemsForOrder(orderId: number, items: CartItem[]): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(`${this.ORDER_CART_PREFIX}${orderId}`, JSON.stringify(items));
+    } catch (error) {
+      console.error('Failed to save order cart items:', error);
+    }
+  }
+
+  removeItemsForOrder(orderId: number): void {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const key = `${this.ORDER_CART_PREFIX}${orderId}`;
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+
+      const orderItems = JSON.parse(raw) as CartItem[];
+
+      this.cartItems.update((currentItems) => {
+        return currentItems.filter((cartItem) => {
+          return !orderItems.some((orderItem) => {
+            return (
+              orderItem.productId === cartItem.productId &&
+              orderItem.variantId === cartItem.variantId &&
+              this.sameAddons(orderItem.addons, cartItem.addons)
+            );
+          });
+        });
+      });
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error('Failed to remove order cart items:', error);
+    }
   }
 
   addItem(newItem: CartItem): void {

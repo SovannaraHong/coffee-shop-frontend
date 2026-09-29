@@ -27,6 +27,7 @@ export interface OrderDetailResponse {
   variantId: number;
   productName: string;
   variantName: string;
+  imageUrl: string;
 
   quantity: number;
   unitPrice: number;
@@ -40,7 +41,6 @@ export interface OrderDetailAddonResponse {
 
   addonId: number;
   addonName: string;
-
   quantity: number;
   unitPrice: number;
   subtotal: number;

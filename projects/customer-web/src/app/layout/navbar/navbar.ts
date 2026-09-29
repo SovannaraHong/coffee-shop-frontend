@@ -181,10 +181,14 @@ export class Navbar implements OnInit {
       localStorage.removeItem('token');
       localStorage.removeItem('tokenType');
       localStorage.removeItem('customerResponse');
+      localStorage.removeItem('user');
+      localStorage.removeItem('tokenExpiresAt');
 
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('tokenType');
       sessionStorage.removeItem('customerResponse');
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('tokenExpiresAt');
     }
 
     this.currentUser.set(null);

@@ -277,6 +277,8 @@ export class Checkout implements OnInit {
   placeOrder(): void {
     if (!this.canPlaceOrder() || !this.customerId) return;
 
+    const cartItems = this.cart.cartItems();
+
     const details: OrderDetailRequest[] = this.cart.cartItems().map((item) => ({
       productId: item.productId,
       variantId: item.variantId,
@@ -296,6 +298,7 @@ export class Checkout implements OnInit {
 
     this.orders.create(request).subscribe({
       next: (order) => {
+        this.cart.saveItemsForOrder(order.id, cartItems);
         this.pendingOrderId.set(order.id);
         this.initiatePayment(order.id);
       },
