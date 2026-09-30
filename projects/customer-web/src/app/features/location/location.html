@@ -1,0 +1,206 @@
+<section class="relative w-full overflow-hidden pt-10 font-poppins bg-[#faf6f0]">
+  <div class="max-w-7xl mx-auto px-6 py-16 md:py-24">
+    <div class="grid grid-cols-1 md:grid-cols-2 items-center gap-12 md:gap-16">
+      <!-- ================= LEFT: MAP ================= -->
+      <div class="relative">
+        <div
+          class="relative bg-white/95 rounded-3xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)] p-4 md:p-6"
+        >
+          <svg
+            viewBox="0 0 440 330"
+            class="w-full h-auto"
+            role="img"
+            aria-label="Map of Cambodia showing Brewista locations"
+          >
+            <defs>
+              <clipPath id="cambodiaClip">
+                <path [attr.d]="outline" />
+              </clipPath>
+            </defs>
+
+            <!-- Provinces (clipped to the country outline) -->
+            <g clip-path="url(#cambodiaClip)">
+              <rect x="0" y="0" width="440" height="330" fill="#4aa8b8" />
+              @for (p of provinces; track p.name) {
+                <polygon
+                  [attr.points]="p.points"
+                  [attr.fill]="p.fill"
+                  stroke="#ffffff"
+                  stroke-width="1.2"
+                  stroke-linejoin="round"
+                />
+              }
+            </g>
+
+            <!-- Province names -->
+            <g
+              class="font-poppins"
+              fill="#0b3f4a"
+              font-size="6.5"
+              text-anchor="middle"
+              pointer-events="none"
+            >
+              @for (p of provinces; track p.name) {
+                <text [attr.x]="p.lx" [attr.y]="p.ly">
+                  @for (line of p.label; track $index; let i = $index) {
+                    <tspan [attr.x]="p.lx" [attr.dy]="i === 0 ? 0 : 7">{{ line }}</tspan>
+                  }
+                </text>
+              }
+            </g>
+
+            <!-- Location pins 1 2 3 -->
+            @for (l of locations; track l.id) {
+              <g
+                class="cursor-pointer outline-none"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="'Location ' + l.id + ': ' + l.name"
+                [attr.transform]="pinTransform(l)"
+                (click)="select(l.id)"
+                (mouseenter)="select(l.id)"
+                (keydown.enter)="select(l.id)"
+              >
+                <!-- soft shadow on the map -->
+                <ellipse cx="0" cy="1" rx="7" ry="2.5" fill="rgba(0,0,0,0.25)" />
+                <path
+                  d="M0 0 C -9 -13 -13 -18 -13 -25 A13 13 0 1 1 13 -25 C 13 -18 9 -13 0 0Z"
+                  [attr.fill]="active() === l.id ? '#c9973f' : '#3c2a1e'"
+                  stroke="#f4e9da"
+                  stroke-width="1.5"
+                  class="transition-colors duration-300"
+                />
+                <text
+                  x="0"
+                  y="-20.5"
+                  text-anchor="middle"
+                  font-size="13"
+                  font-weight="800"
+                  [attr.fill]="active() === l.id ? '#1f1410' : '#f4e9da'"
+                  class="font-poppins"
+                >
+                  {{ l.id }}
+                </text>
+              </g>
+            }
+          </svg>
+        </div>
+
+        <!-- Wooden tag on the map card -->
+        <div
+          class="absolute -top-4 -left-2 md:-left-4 bg-[#3c2a1e] text-[#f4e9da] rounded-xl shadow-lg px-4 py-3 rotate-[-3deg] border border-[#5a4433]"
+        >
+          <p class="text-xs font-bold leading-tight tracking-wide font-poppins">FIND US</p>
+          <p class="text-xs font-bold leading-tight tracking-wide font-poppins">IN CAMBODIA ♥</p>
+        </div>
+      </div>
+
+      <!-- ================= RIGHT: TEXT ================= -->
+      <div>
+        <p class="flex items-center gap-2 text-[30px] text-[#b9865a] mb-4 font-script">
+          Come Visit Us
+          <svg
+            class="w-5 h-5 -mt-1"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 2C9 6 4 9 4 14a8 8 0 0 0 16 0c0-5-5-8-8-12z" />
+          </svg>
+        </p>
+
+        <h1
+          class="text-4xl md:text-5xl font-extrabold font-poppins text-[#1f1410] leading-[1.08] tracking-tight"
+        >
+          Find Your Nearest<br />
+          <span class="text-[#c9973f]">Brewista</span> Cafe
+        </h1>
+
+        <p class="text-[#7a6a5e] mt-5 max-w-md leading-relaxed">
+          Three cozy shops, one warm welcome. Pick a pin on the map or choose a location below.
+        </p>
+
+        <div class="mt-8 space-y-3">
+          @for (l of locations; track l.id) {
+            <div
+              class="flex gap-4 rounded-2xl border px-4 py-4 cursor-pointer transition-all duration-300"
+              [class]="
+                active() === l.id
+                  ? 'bg-white border-[#c9973f] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.25)]'
+                  : 'bg-white/50 border-[#eee6da] hover:bg-white/80'
+              "
+              (click)="select(l.id)"
+              (mouseenter)="select(l.id)"
+            >
+              <!-- number badge (matches map pin) -->
+              <div
+                class="shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-poppins font-extrabold text-sm transition-colors duration-300"
+                [class]="
+                  active() === l.id ? 'bg-[#c9973f] text-[#1f1410]' : 'bg-[#3c2a1e] text-[#f4e9da]'
+                "
+              >
+                {{ l.id }}
+              </div>
+
+              <div class="flex-1 font-poppins">
+                <p class="text-sm font-bold text-[#1f1410]">{{ l.name }}</p>
+                <p class="text-xs text-[#8a7a6c] mt-1 leading-relaxed">{{ l.address }}</p>
+
+                @if (active() === l.id) {
+                  <div class="mt-3 space-y-1.5 text-xs text-[#1f1410]">
+                    <p class="flex items-center gap-2">
+                      <svg
+                        class="w-4 h-4 text-[#c9973f]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3 2" />
+                      </svg>
+                      {{ l.hours }}
+                    </p>
+                    <p class="flex items-center gap-2">
+                      <svg
+                        class="w-4 h-4 text-[#c9973f]"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path
+                          d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"
+                        />
+                      </svg>
+                      {{ l.phone }}
+                    </p>
+                  </div>
+
+                  <a
+                    [href]="l.mapUrl"
+                    target="_blank"
+                    rel="noopener"
+                    class="inline-flex items-center gap-2 mt-4 bg-[#1f1410] text-white text-[11px] font-semibold uppercase tracking-widest px-5 py-3 rounded-full hover:bg-[#33231a] transition-colors"
+                  >
+                    Get Directions
+                    <svg
+                      class="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                  </a>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

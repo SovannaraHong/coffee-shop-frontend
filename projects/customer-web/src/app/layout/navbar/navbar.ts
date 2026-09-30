@@ -14,7 +14,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { CartService } from '../../../../../../libs/services/cart/cart.service';
 import { OrderService } from '../../../../../../libs/services/order/order.service';
-
+import { faClock } from '@fortawesome/free-solid-svg-icons';
 interface NavLink {
   label: string;
   route: string;
@@ -34,6 +34,7 @@ interface UserMenuItem {
   styleUrl: './navbar.css',
 })
 export class Navbar implements OnInit {
+  faClock = faClock;
   private readonly platformId = inject(PLATFORM_ID);
   cartService = inject(CartService);
   ordersService = inject(OrderService);

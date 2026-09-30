@@ -22,6 +22,10 @@ export const routes: Routes = [
           import('./shared/components/banner-menu/banner-menu').then((m) => m.BannerMenu),
       },
       {
+        path: 'front/locations',
+        loadComponent: () => import('./features/location/location').then((m) => m.Location),
+      },
+      {
         path: 'front/about',
         loadComponent: () => import('./features/about-page/about-page').then((m) => m.AboutPage),
       },
