@@ -8,7 +8,10 @@ import {
   CustomerLoginRequest,
   CustomerRegisterRequest,
 } from '../../models/customer/customer-request.model';
-import { CustomerResponse, LoginResponse } from '../../models/customer/customer-response.model';
+import {
+  CustomerLoginResponse,
+  CustomerResponse,
+} from '../../models/customer/customer-response.model';
 
 @Injectable({
   providedIn: 'root',
@@ -19,8 +22,8 @@ export class CustomerService {
 
   private readonly endpoint = `${this.apiUrl}/auth`;
 
-  login(request: CustomerLoginRequest): Observable<LoginResponse> {
-    return this.apiClient.post<LoginResponse>(`${this.endpoint}/login`, request);
+  login(request: CustomerLoginRequest): Observable<CustomerLoginResponse> {
+    return this.apiClient.post<CustomerLoginResponse>(`${this.endpoint}/login`, request);
   }
 
   register(request: CustomerRegisterRequest): Observable<CustomerResponse> {

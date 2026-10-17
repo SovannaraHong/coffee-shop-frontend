@@ -2,7 +2,7 @@
   <!-- Left panel -->
   <div class="relative hidden lg:flex lg:w-[55%] flex-col justify-between p-10 overflow-hidden">
     <img
-      src="/assets/images/koi-kol/koi-kol.jpg"
+      src="/assets/images/banner-signup.webp"
       alt=""
       class="absolute inset-0 h-full w-full object-cover"
     />
@@ -88,6 +88,14 @@
                 />
               </svg>
               <span>{{ errorMessage() }}</span>
+            </div>
+          }
+
+          @if (successMessage()) {
+            <div
+              class="flex items-start gap-2 rounded-xl bg-green-50 px-4 py-2.5 text-sm text-green-700 border border-green-100"
+            >
+              <span>{{ successMessage() }}</span>
             </div>
           }
 
@@ -192,6 +200,7 @@
                 type="tel"
                 formControlName="phone"
                 placeholder="0123456789"
+                autocomplete="tel"
                 class="w-full rounded-xl border bg-slate-50/60 pl-11 pr-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
                 [class.border-red-400]="phone?.invalid && phone?.touched"
                 [class.border-slate-200]="!(phone?.invalid && phone?.touched)"
@@ -280,7 +289,7 @@
               </button>
             </div>
             @if (password?.invalid && password?.touched) {
-              <p class="mt-1 text-xs text-red-500">Password must be at least 6 characters.</p>
+              <p class="mt-1 text-xs text-red-500">Password must be at least 8 characters.</p>
             }
           </div>
 
@@ -315,10 +324,10 @@
                 autocomplete="new-password"
                 class="w-full rounded-xl border bg-slate-50/60 pl-11 pr-11 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
                 [class.border-red-400]="
-                  confirmPassword?.touched && signupForm.errors?.['passwordMismatch']
+                  confirmPassword?.touched && signupForm.errors?.['passwordsMismatch']
                 "
                 [class.border-slate-200]="
-                  !(confirmPassword?.touched && signupForm.errors?.['passwordMismatch'])
+                  !(confirmPassword?.touched && signupForm.errors?.['passwordsMismatch'])
                 "
               />
               <button
@@ -365,14 +374,14 @@
                 }
               </button>
             </div>
-            @if (confirmPassword?.touched && signupForm.errors?.['passwordMismatch']) {
+            @if (confirmPassword?.touched && signupForm.errors?.['passwordsMismatch']) {
               <p class="mt-1 text-xs text-red-500">Passwords do not match.</p>
             }
           </div>
 
           <button
             type="submit"
-            [disabled]="isLoading()"
+            [disabled]="isLoading() || !!successMessage()"
             class="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-2.5 text-sm font-medium text-white shadow-md shadow-indigo-600/20 transition-all hover:shadow-lg hover:shadow-indigo-600/30 hover:-translate-y-px active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-md"
           >
             @if (!isLoading()) {
@@ -401,7 +410,7 @@
 
           <p class="pt-1 text-center text-sm text-slate-500">
             Already have an account?
-            <a routerLink="front/login" class="font-medium text-indigo-600 hover:underline"
+            <a routerLink="/front/login" class="font-medium text-indigo-600 hover:underline"
               >Log in</a
             >
           </p>

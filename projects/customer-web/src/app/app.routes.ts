@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { Home } from './features/home/home';
 import { MainLayout } from './layout/main-layout/main-layout';
 import { authGuard } from './core/guards/auth-guard';
+import { loginLockGuard } from './core/guards/Login/login-lock-guard';
 
 export const routes: Routes = [
   {
@@ -55,5 +56,9 @@ export const routes: Routes = [
     path: 'front/verify-otp',
     loadComponent: () =>
       import('./features/auth/components/verify-otp/verify-otp').then((m) => m.VerifyOtp),
+  },
+  {
+    path: 'rate-limit',
+    loadComponent: () => import('./pages/rate-limit/rate-limit').then((m) => m.RateLimit),
   },
 ];

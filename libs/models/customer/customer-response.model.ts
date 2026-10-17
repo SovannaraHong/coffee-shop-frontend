@@ -8,9 +8,11 @@ export interface CustomerResponse {
   isVerified: boolean;
   isActive: boolean;
 }
-
-export interface LoginResponse {
+export interface CustomerLoginResponse {
   token: string;
+  refreshToken: string;
   tokenType: string;
+  expiresIn: number;
+  refreshExpiresIn: number;
   customer: CustomerResponse;
 }

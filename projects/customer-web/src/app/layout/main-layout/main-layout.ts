@@ -6,7 +6,7 @@ import { Cart } from '../../features/cart/cart';
 import { Order } from '../../features/order/order';
 import { CartToast } from '../../shared/components/cart-toast/cart-toast';
 import { Checkout } from '../../features/checkout/checkout';
-import { AuthService } from '../../core/auth/auth-service';
+import { AuthService } from '../../core/auth/auth/auth-service';
 
 @Component({
   imports: [Navbar, RouterModule, Footer, Cart, Order, CartToast],

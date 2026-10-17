@@ -1,0 +1,52 @@
+<nav class="mt-8 flex items-center justify-center gap-1 font-poppins" aria-label="Pagination">
+
+  <!-- Prev button -->
+  <button
+    type="button"
+    (click)="prev()"
+    [disabled]="!hasPrev()"
+    class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+    aria-label="Previous page"
+  >
+    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+    </svg>
+  </button>
+
+  <!-- Page items -->
+  @for (page of pages(); track $index) {
+    @if (page === '...') {
+      <span class="flex h-9 w-9 items-center justify-center text-sm text-slate-400 select-none">
+        …
+      </span>
+    } @else {
+      <button
+        type="button"
+        (click)="go(page)"
+        [attr.aria-current]="page === currentPage() ? 'page' : null"
+        class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium transition-colors"
+        [class]="
+          page === currentPage()
+            ? 'bg-slate-900 text-white'
+            : 'border border-slate-200 text-slate-600 hover:bg-slate-100'
+        "
+      >
+        {{ page }}
+      </button>
+    }
+  }
+
+  <!-- Next button -->
+  <button
+    type="button"
+    (click)="next()"
+    [disabled]="!hasNext()"
+    class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+    aria-label="Next page"
+  >
+    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+
+</nav>
