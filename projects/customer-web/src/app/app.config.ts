@@ -1,3 +1,4 @@
+import { rateLimitInterceptor } from './core/interceptor/rate-limit-interceptor';
 import { authInterceptor } from './core/interceptor/auth.interceptor';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
@@ -11,7 +12,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, rateLimitInterceptor])),
     provideClientHydration(),
     {
       provide: API_URL,

@@ -13,7 +13,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { loadAuth } from '../../core/auth/auth-storage.util';
+import { loadAuth } from '../../core/auth/auth/auth-storage.util';
 import { CartService } from '../../../../../../libs/services/cart/cart.service';
 import { PaymentQrModal } from '../../shared/components/payment-qr-modal/payment-qr-modal';
 import { KhqrPaymentResult } from '../../../../../../libs/models/payment/payment-response';
@@ -302,9 +302,12 @@ export class Checkout implements OnInit {
         this.pendingOrderId.set(order.id);
         this.initiatePayment(order.id);
       },
-      error: () => {
+      error: (err) => {
         this.placingOrder.set(false);
-        this.errorMessage.set('Something went wrong placing your order. Please try again.');
+
+        this.errorMessage.set(
+          err.error?.message ?? 'Unable to place your order. Please try again.',
+        );
       },
     });
   }

@@ -1,6 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { loadAuth, saveAuth, clearAuth, StoreAuth } from './auth-storage.util';
-import { CustomerResponse } from '../../../../../../libs/models/customer/customer-response.model';
+import { CustomerResponse } from '../../../../../../../libs/models/customer/customer-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

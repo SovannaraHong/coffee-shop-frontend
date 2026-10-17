@@ -3,7 +3,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { saveAuth } from '../../../../core/auth/auth-storage.util';
+import { saveAuth } from '../../../../core/auth/auth/auth-storage.util';
+import { saveRefreshToken } from '../../../../core/auth/auth/session.util';
 import { CustomerLoginRequest } from '../../../../../../../../libs/models/customer/customer-request.model';
 import { CustomerService } from '../../../../../../../../libs/api/customer/customer.service';
 
@@ -26,13 +27,15 @@ export class Login {
   constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required]],
       rememberMe: [false],
     });
   }
+
   togglePassword(): void {
     this.showPassword.update((v) => !v);
   }
+
   get email() {
     return this.loginForm.get('email');
   }
@@ -62,6 +65,7 @@ export class Login {
           tokenType: res.tokenType,
           customer: res.customer,
         });
+        saveRefreshToken(res.refreshToken);
         this.router.navigate(['/']);
       },
       error: (err: HttpErrorResponse) => {
@@ -70,9 +74,7 @@ export class Login {
       },
     });
   }
-  continueWithGoogle(): void {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
-  }
+
   goToRegister() {
     this.router.navigate(['front/signup']);
   }
