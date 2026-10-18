@@ -1,0 +1,220 @@
+<!-- Header -->
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <h1 class="text-[28px] font-normal leading-tight text-neutral-900">Suppliers</h1>
+    <p class="mt-1 text-[15px] text-neutral-900">The people who keep your shelves full</p>
+  </div>
+  <div class="flex gap-2">
+    <button
+      type="button"
+      class="flex h-[42px] items-center gap-1.5 rounded-md border border-neutral-700 bg-white px-4 text-[15px] text-neutral-700 hover:bg-neutral-50"
+    >
+      <i class="fa-regular fa-file-excel text-xs text-emerald-600"></i> Excel
+    </button>
+    <button
+      type="button"
+      class="flex h-[42px] items-center gap-1.5 rounded-md bg-[#e95f37] px-4 text-[15px] text-white hover:bg-[#d4532e]"
+      (click)="openAdd()"
+    >
+      <i class="fa-solid fa-plus text-xs"></i> Add supplier
+    </button>
+  </div>
+</div>
+
+<!-- Table card -->
+<div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+  <div
+    class="flex flex-col gap-3 border-b border-neutral-200 p-4 md:flex-row md:items-center md:justify-between"
+  >
+    <!-- Status tabs -->
+    <div class="inline-flex rounded-xl bg-neutral-100 p-1 text-sm">
+      @for (t of statusTabs(); track t.value) {
+        <button
+          type="button"
+          class="flex items-center gap-2 rounded-lg px-3.5 py-1.5 font-medium transition-colors"
+          [class]="
+            status() === t.value
+              ? 'bg-white text-neutral-900 shadow-sm'
+              : 'text-neutral-500 hover:text-neutral-700'
+          "
+          (click)="setStatus(t.value)"
+        >
+          {{ t.label }}
+          <span
+            class="rounded-full px-1.5 text-[11px]"
+            [class]="
+              status() === t.value ? 'bg-[#e95f37] text-white' : 'bg-neutral-200 text-neutral-600'
+            "
+            >{{ t.count }}</span
+          >
+        </button>
+      }
+    </div>
+
+    <!-- Search -->
+    <div class="relative md:w-72">
+      <i
+        class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+      ></i>
+      <input
+        type="search"
+        placeholder="Search suppliers…"
+        class="h-[38px] w-full rounded-full border border-neutral-200 bg-white pl-9 pr-4 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+        [value]="search()"
+        (input)="setSearch($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-[15px]">
+      <thead>
+        <tr class="h-[42px] bg-[#f7f7f7] text-xs uppercase tracking-wide text-neutral-500">
+          <th class="px-5 font-medium">Supplier</th>
+          <th class="font-medium">Contact</th>
+          <th class="font-medium">Supplies</th>
+          <th class="font-medium">Items</th>
+          <th class="font-medium">Last delivery</th>
+          <th class="font-medium">Status</th>
+          <th class="px-5 text-right font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of paged(); track s.id) {
+          <tr
+            class="h-[72px] border-t border-neutral-100 text-neutral-700 transition-colors hover:bg-orange-50/40"
+          >
+            <td class="px-5">
+              <div class="flex items-center gap-3">
+                <span
+                  class="grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-orange-100 to-orange-200 text-sm font-semibold text-[#e95f37]"
+                  >{{ initials(s.name) }}</span
+                >
+                <p class="font-medium text-neutral-900">{{ s.name }}</p>
+              </div>
+            </td>
+            <td>
+              <p class="text-neutral-900">{{ s.contact }}</p>
+              <p class="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-neutral-400">
+                <span><i class="fa-regular fa-envelope mr-1"></i>{{ s.email }}</span>
+                @if (s.phone) {
+                  <span><i class="fa-solid fa-phone mr-1 text-[10px]"></i>{{ s.phone }}</span>
+                }
+              </p>
+            </td>
+            <td>
+              @if (s.supplies) {
+                <div class="flex max-w-64 flex-wrap gap-1">
+                  @for (t of tags(s.supplies); track t) {
+                    <span
+                      class="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs text-neutral-600"
+                      >{{ t }}</span
+                    >
+                  }
+                </div>
+              } @else {
+                <span class="text-neutral-400">—</span>
+              }
+            </td>
+            <td>
+              <span class="rounded-md bg-neutral-100 px-2 py-1 text-xs font-medium text-neutral-700"
+                >{{ itemCount(s.id) }} items</span
+              >
+            </td>
+            <td class="text-neutral-500">{{ s.lastDelivery | date: 'MMM d, y' }}</td>
+            <td>
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+                [class]="statusClass(s.status)"
+              >
+                <span class="size-1.5 rounded-full bg-current"></span>{{ s.status }}
+              </span>
+            </td>
+            <td class="px-5 text-right">
+              <button
+                type="button"
+                aria-label="Edit"
+                class="inline-grid size-9 place-items-center rounded-lg bg-neutral-100 text-neutral-600 transition hover:bg-[#e95f37] hover:text-white"
+                (click)="openEdit(s)"
+              >
+                <i class="fa-regular fa-pen-to-square text-sm"></i>
+              </button>
+              <button
+                type="button"
+                aria-label="Delete"
+                class="ml-1 inline-grid size-9 place-items-center rounded-lg bg-red-50 text-red-500 transition hover:bg-red-500 hover:text-white"
+                (click)="toDelete.set(s)"
+              >
+                <i class="fa-regular fa-trash-can text-sm"></i>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7" class="py-16 text-center text-neutral-400">
+              <span
+                class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-neutral-100 text-2xl"
+                ><i class="fa-solid fa-truck"></i
+              ></span>
+              No suppliers found
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer / pagination -->
+  <div class="flex items-center justify-between border-t border-neutral-200 px-5 py-3">
+    <span class="text-sm text-neutral-500"
+      >Showing {{ paged().length }} of {{ filtered().length }} suppliers</span
+    >
+    <div class="flex overflow-hidden rounded-md border border-neutral-200 text-[15px]">
+      <button
+        type="button"
+        class="bg-neutral-200 px-3.5 py-1.5 text-neutral-600"
+        [disabled]="page() === 1"
+        (click)="goTo(page() - 1)"
+      >
+        Previous
+      </button>
+      @for (n of pages(); track n) {
+        <button
+          type="button"
+          class="border-l border-neutral-200 px-3.5 py-1.5"
+          [class]="
+            n === page()
+              ? 'bg-[#e95f37] text-white'
+              : 'bg-white text-neutral-700 hover:bg-neutral-100'
+          "
+          (click)="goTo(n)"
+        >
+          {{ n }}
+        </button>
+      }
+      <button
+        type="button"
+        class="border-l border-neutral-200 bg-white px-3.5 py-1.5 text-neutral-700 hover:bg-neutral-100"
+        [disabled]="page() === pageCount()"
+        (click)="goTo(page() + 1)"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div>
+
+<app-supplier-drawer
+  [open]="showDrawer()"
+  [supplier]="editing()"
+  (closed)="showDrawer.set(false)"
+  (saved)="onSaved($event)"
+/>
+
+<app-confirm-dialog
+  [open]="!!toDelete()"
+  title="Delete supplier"
+  [message]="'Delete ' + toDelete()?.name + '?'"
+  (confirmed)="confirmDelete()"
+  (cancelled)="toDelete.set(null)"
+/>

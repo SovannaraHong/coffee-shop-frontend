@@ -1,0 +1,15 @@
+<div class="flex items-start gap-4 rounded-md border px-6 py-6" [class]="t().wrap">
+  <div
+    class="grid size-[42px] shrink-0 place-items-center rounded-lg text-lg text-white"
+    [class]="t().icon"
+  >
+    <i class="fa-solid" [class]="icon()"></i>
+  </div>
+  <div class="min-w-0">
+    <p class="text-[15px] text-neutral-800">{{ label() }}</p>
+    <p class="mt-2 text-[28px] font-semibold leading-none text-neutral-900">{{ value() }}</p>
+    @if (note()) {
+      <p class="mt-2 text-sm" [class]="t().text">{{ note() }}</p>
+    }
+  </div>
+</div>

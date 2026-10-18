@@ -1,0 +1,136 @@
+<!-- Header -->
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <h1 class="text-[28px] font-normal leading-tight text-neutral-900">Categories</h1>
+    <p class="mt-1 text-[15px] text-neutral-900">Group your menu items so they're easy to find</p>
+  </div>
+  <button
+    type="button"
+    class="flex h-[42px] items-center gap-1.5 rounded-md bg-[#e95f37] px-4 text-[15px] text-white hover:bg-[#d4532e]"
+    (click)="openAdd()"
+  >
+    <i class="fa-solid fa-plus text-xs"></i> Add category
+  </button>
+</div>
+
+<!-- Toolbar -->
+<div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div class="inline-flex rounded-xl bg-neutral-100 p-1 text-sm">
+    @for (t of statusTabs; track t.value) {
+      <button
+        type="button"
+        class="rounded-lg px-3.5 py-1.5 font-medium transition-colors"
+        [class]="
+          status() === t.value
+            ? 'bg-white text-neutral-900 shadow-sm'
+            : 'text-neutral-500 hover:text-neutral-700'
+        "
+        (click)="status.set(t.value)"
+      >
+        {{ t.label }}
+      </button>
+    }
+  </div>
+  <div class="relative sm:w-64">
+    <i
+      class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+    ></i>
+    <input
+      type="search"
+      placeholder="Search categories…"
+      class="h-[38px] w-full rounded-full border border-neutral-200 bg-white pl-9 pr-4 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </div>
+</div>
+
+<!-- Cards -->
+<div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+  @for (c of filtered(); track c.id) {
+    <div
+      class="group flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:-translate-y-0.5 hover:shadow-md"
+    >
+      <!-- Cover -->
+      <div class="relative h-36 overflow-hidden bg-gradient-to-br from-orange-100 to-orange-200">
+        @if (c.image) {
+          <img
+            [src]="c.image"
+            alt=""
+            class="size-full object-cover transition duration-500 group-hover:scale-105"
+          />
+        } @else {
+          <i
+            class="fa-solid fa-mug-hot absolute -bottom-4 -right-2 text-[110px] text-[#e95f37] opacity-20"
+          ></i>
+        }
+        <span
+          class="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+          [class]="c.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-white/90 text-neutral-500'"
+        >
+          <span class="size-1.5 rounded-full bg-current"></span
+          >{{ c.isActive ? 'Active' : 'Inactive' }}
+        </span>
+      </div>
+
+      <!-- Body -->
+      <div class="flex flex-1 flex-col p-5">
+        <h3 class="text-base font-semibold text-neutral-900">{{ c.name }}</h3>
+        <p class="mt-1 line-clamp-2 flex-1 text-sm text-neutral-500">
+          {{ c.description || 'No description' }}
+        </p>
+        <div class="mt-4 flex items-center justify-between border-t border-neutral-100 pt-4">
+          <span class="rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-600">
+            <span class="font-semibold text-neutral-900">{{ counts().get(c.id) ?? 0 }}</span>
+            products
+          </span>
+          <div class="flex gap-1">
+            <button
+              type="button"
+              aria-label="Edit"
+              class="inline-grid size-9 place-items-center rounded-lg bg-neutral-100 text-neutral-600 transition hover:bg-[#e95f37] hover:text-white"
+              (click)="openEdit(c)"
+            >
+              <i class="fa-regular fa-pen-to-square text-sm"></i>
+            </button>
+            <button
+              type="button"
+              aria-label="Delete"
+              class="inline-grid size-9 place-items-center rounded-lg bg-red-50 text-red-500 transition hover:bg-red-500 hover:text-white"
+              (click)="toDelete.set(c)"
+            >
+              <i class="fa-regular fa-trash-can text-sm"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  } @empty {
+    <div
+      class="col-span-full rounded-2xl border border-neutral-200 bg-white p-16 text-center text-neutral-400"
+    >
+      <span
+        class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-neutral-100 text-2xl"
+        ><i class="fa-solid fa-tags"></i
+      ></span>
+      No categories found
+    </div>
+  }
+</div>
+
+<app-category-drawer
+  [open]="showDrawer()"
+  [category]="editing()"
+  (closed)="showDrawer.set(false)"
+  (saved)="onSaved($event)"
+/>
+
+<app-confirm-dialog
+  [open]="!!toDelete()"
+  title="Delete category"
+  [message]="
+    'Delete ' + toDelete()?.name + '? Products in this category will become uncategorised.'
+  "
+  (confirmed)="confirmDelete()"
+  (cancelled)="toDelete.set(null)"
+/>

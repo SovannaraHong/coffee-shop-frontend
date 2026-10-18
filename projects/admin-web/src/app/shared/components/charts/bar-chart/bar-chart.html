@@ -1,0 +1,57 @@
+<svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="h-auto w-full" role="img" aria-label="Bar chart">
+  <text
+    transform="rotate(-90)"
+    [attr.x]="-(T + plotH / 2)"
+    y="12"
+    text-anchor="middle"
+    class="fill-neutral-700 text-[11px]"
+  >
+    {{ yTitle() }}
+  </text>
+  @for (t of ticks(); track t.value) {
+    <line
+      [attr.x1]="L"
+      [attr.x2]="W - R"
+      [attr.y1]="t.y"
+      [attr.y2]="t.y"
+      class="stroke-neutral-200"
+    />
+    <text
+      [attr.x]="L - 8"
+      [attr.y]="t.y + 4"
+      text-anchor="end"
+      class="fill-neutral-600 text-[11px]"
+    >
+      {{ t.label }}
+    </text>
+  }
+  @for (g of groups(); track g.label) {
+    @for (b of g.bars; track b.name) {
+      <rect
+        [attr.x]="b.x"
+        [attr.y]="b.y"
+        [attr.width]="b.w"
+        [attr.height]="b.h"
+        [attr.fill]="b.color"
+        class="transition-opacity hover:opacity-80"
+      >
+        <title>{{ b.name }} · {{ g.label }}: {{ b.text }}</title>
+      </rect>
+    }
+    <text
+      [attr.x]="g.cx"
+      [attr.y]="H - 8"
+      text-anchor="middle"
+      class="fill-neutral-700 text-[12px]"
+    >
+      {{ g.label }}
+    </text>
+  }
+</svg>
+<div class="mt-3 flex flex-wrap justify-center gap-4 text-sm text-neutral-700">
+  @for (s of series(); track s.name) {
+    <span class="inline-flex items-center gap-1.5">
+      <i class="inline-block size-2.5" [style.background]="s.color"></i>{{ s.name }}
+    </span>
+  }
+</div>

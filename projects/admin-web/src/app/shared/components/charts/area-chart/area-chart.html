@@ -1,0 +1,164 @@
+<div class="mb-2 flex justify-end gap-3 pr-2 text-xs text-neutral-700">
+  @for (s of series(); track s.name) {
+    <span class="inline-flex items-center gap-1.5">
+      <i class="inline-block size-3 rounded-full" [style.background]="s.color"></i>{{ s.name }}
+    </span>
+  }
+</div>
+
+<div class="relative" (mouseleave)="hover.set(null)">
+  <svg
+    [attr.viewBox]="'0 0 ' + W + ' ' + H"
+    class="h-auto w-full"
+    role="img"
+    aria-label="Sales overview chart"
+  >
+    <defs>
+      @for (p of paths(); track p.id) {
+        <linearGradient [attr.id]="p.id" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" [attr.stop-color]="p.color" stop-opacity="0.22" />
+          <stop offset="1" [attr.stop-color]="p.color" stop-opacity="0" />
+        </linearGradient>
+      }
+    </defs>
+
+    <text
+      transform="rotate(-90)"
+      [attr.x]="-(T + plotH / 2)"
+      y="14"
+      text-anchor="middle"
+      class="fill-neutral-800 text-[11px] font-semibold"
+    >
+      {{ yTitle() }}
+    </text>
+
+    @for (t of ticks(); track t.label) {
+      <line
+        [attr.x1]="L"
+        [attr.x2]="W - R"
+        [attr.y1]="t.y"
+        [attr.y2]="t.y"
+        class="stroke-neutral-200"
+      />
+      <text
+        [attr.x]="L - 12"
+        [attr.y]="t.y + 4"
+        text-anchor="end"
+        class="fill-neutral-700 text-[10px]"
+      >
+        {{ t.label }}
+      </text>
+    }
+
+    @for (p of paths(); track p.id) {
+      <path [attr.d]="p.area" [attr.fill]="'url(#' + p.id + ')'" />
+    }
+
+    <!-- axis + ticks + month labels -->
+    <line
+      [attr.x1]="L"
+      [attr.x2]="W - R"
+      [attr.y1]="base"
+      [attr.y2]="base"
+      class="stroke-neutral-300"
+    />
+    @for (c of cols(); track c.label; let i = $index) {
+      <line
+        [attr.x1]="c.x"
+        [attr.x2]="c.x"
+        [attr.y1]="base"
+        [attr.y2]="base + 6"
+        class="stroke-neutral-300"
+      />
+      @if (hover() === i) {
+        <line
+          [attr.x1]="c.x"
+          [attr.x2]="c.x"
+          [attr.y1]="T"
+          [attr.y2]="base"
+          stroke="#9ca3af"
+          stroke-dasharray="3 3"
+        />
+        <rect
+          [attr.x]="c.x - 20"
+          [attr.y]="base + 8"
+          width="40"
+          height="26"
+          fill="#e9eef2"
+          stroke="#9db0bd"
+        />
+      }
+      <text
+        [attr.x]="c.x"
+        [attr.y]="base + 25"
+        text-anchor="middle"
+        class="fill-neutral-800 text-[11px]"
+      >
+        {{ c.label }}
+      </text>
+    }
+
+    @for (p of paths(); track p.id) {
+      <path
+        [attr.d]="p.line"
+        fill="none"
+        [attr.stroke]="p.color"
+        stroke-width="3"
+        stroke-linecap="round"
+      />
+    }
+
+    @for (p of paths(); track p.id) {
+      @for (tg of p.tags; track $index) {
+        <rect
+          [attr.x]="tg.x"
+          [attr.y]="tg.y"
+          [attr.width]="tg.w"
+          height="16"
+          rx="2"
+          [attr.fill]="p.color"
+          stroke="#fff"
+          stroke-width="1"
+        />
+        <text
+          [attr.x]="tg.x + tg.w / 2"
+          [attr.y]="tg.y + 12"
+          text-anchor="middle"
+          class="fill-white text-[10px] font-semibold"
+        >
+          {{ tg.text }}
+        </text>
+      }
+    }
+
+    <!-- hover zones -->
+    @for (c of cols(); track c.label; let i = $index) {
+      <rect
+        [attr.x]="c.x - c.slot / 2"
+        [attr.y]="T"
+        [attr.width]="c.slot"
+        [attr.height]="plotH + B"
+        fill="transparent"
+        (mouseenter)="hover.set(i)"
+      />
+    }
+  </svg>
+
+  @if (tip(); as tp) {
+    <div
+      class="pointer-events-none absolute top-[8%] z-10 w-44 rounded border border-neutral-200 bg-white text-xs shadow-md"
+      [style.left.%]="tp.left"
+      [style.transform]="tp.flip ? 'translateX(8px)' : 'translateX(calc(-100% - 8px))'"
+    >
+      <div class="bg-neutral-100 px-2.5 py-1.5 text-neutral-800">{{ tp.label }}</div>
+      <div class="space-y-3 px-2.5 py-3">
+        @for (r of tp.rows; track r.name) {
+          <div class="flex items-center gap-2 text-neutral-800">
+            <i class="inline-block size-3 rounded-full" [style.background]="r.color"></i>
+            <span>{{ r.name }}:</span><span class="ml-auto">{{ r.value }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

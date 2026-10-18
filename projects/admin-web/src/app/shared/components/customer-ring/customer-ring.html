@@ -1,0 +1,55 @@
+<div class="flex items-center justify-between gap-6 py-6">
+  <svg viewBox="0 0 100 100" class="size-40 shrink-0" role="img" aria-label="Customers ring">
+    <defs>
+      <linearGradient id="ringOuter" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#4ade80" />
+        <stop offset="1" stop-color="#0f766e" />
+      </linearGradient>
+      <linearGradient id="ringInner" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#e8643c" />
+        <stop offset="1" stop-color="#fcd34d" />
+      </linearGradient>
+    </defs>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="#f1f1f1" stroke-width="4" />
+    <circle cx="50" cy="50" r="36" fill="none" stroke="#f1f1f1" stroke-width="4" />
+    <circle
+      cx="50"
+      cy="50"
+      r="46"
+      fill="none"
+      stroke="url(#ringOuter)"
+      stroke-width="6"
+      stroke-linecap="round"
+      stroke-dasharray="200 289"
+      transform="rotate(-80 50 50)"
+    />
+    <circle
+      cx="50"
+      cy="50"
+      r="36"
+      fill="none"
+      stroke="url(#ringInner)"
+      stroke-width="6"
+      stroke-linecap="round"
+      stroke-dasharray="150 226"
+      transform="rotate(-80 50 50)"
+    />
+  </svg>
+
+  <div class="flex flex-1 justify-around divide-x divide-neutral-200 text-center">
+    <div class="flex-1 px-4">
+      <p class="text-[28px] font-light text-neutral-900">{{ firstTime() }}</p>
+      <p class="mt-1 text-sm text-[#00c853]">First Time</p>
+      <span class="badge mt-2 bg-[#00c853] text-white">
+        <i class="fa-solid fa-arrow-up mr-1 -rotate-45 text-[9px]"></i>{{ firstTimePct() }}%
+      </span>
+    </div>
+    <div class="flex-1 px-4">
+      <p class="text-[28px] font-light text-neutral-900">{{ returning() }}</p>
+      <p class="mt-1 text-sm text-[#f2b100]">Return</p>
+      <span class="badge mt-2 bg-[#00c853] text-white">
+        <i class="fa-solid fa-arrow-up mr-1 -rotate-45 text-[9px]"></i>{{ returningPct() }}%
+      </span>
+    </div>
+  </div>
+</div>

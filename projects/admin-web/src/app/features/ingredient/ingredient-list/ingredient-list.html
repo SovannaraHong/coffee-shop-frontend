@@ -1,0 +1,129 @@
+<app-page-header title="Ingredients" subtitle="Raw materials and stock levels">
+  <button type="button" class="btn btn-primary" (click)="openAdd()">
+    <i class="fa-solid fa-plus"></i> Add ingredient
+  </button>
+</app-page-header>
+
+<div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+  <div></div>
+  <div class="relative md:w-64">
+    <i
+      class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+    ></i>
+    <input
+      type="search"
+      class="input pl-9"
+      placeholder="Search ingredients…"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </div>
+</div>
+
+<div class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[860px] text-left text-sm">
+      <thead class="border-b border-neutral-200 bg-neutral-50 text-xs font-medium text-neutral-500">
+        <tr>
+          <th class="px-5 py-3">Ingredient</th>
+          <th class="px-5 py-3">Quantity in stock</th>
+          <th class="px-5 py-3">Reorder level</th>
+          <th class="px-5 py-3">Level</th>
+          <th class="px-5 py-3">Status</th>
+          <th class="px-5 py-3">Created</th>
+          <th class="px-5 py-3">Created by</th>
+          <th class="px-5 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-neutral-100">
+        @for (r of filtered(); track r.id) {
+          <tr class="transition-colors hover:bg-neutral-50">
+            <td class="px-5 py-3 text-neutral-600">
+              <span class="font-medium text-neutral-900">{{ r.name }}</span>
+            </td>
+            <td class="px-5 py-3 text-neutral-600">
+              <span class="whitespace-nowrap">{{ r.quantityInStock | number }} {{ r.unit }}</span>
+            </td>
+            <td class="px-5 py-3 text-neutral-600">
+              <span class="whitespace-nowrap">{{ r.reorderLevel | number }} {{ r.unit }}</span>
+            </td>
+            <td class="px-5 py-3 text-neutral-600">
+              @if (r.quantityInStock <= r.reorderLevel) {
+                <span
+                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-50 text-amber-700"
+                  >Low stock</span
+                >
+              } @else {
+                <span
+                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-700"
+                  >In stock</span
+                >
+              }
+            </td>
+            <td class="px-5 py-3 text-neutral-600">
+              @if (r.isActive) {
+                <span
+                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-700"
+                  >Active</span
+                >
+              } @else {
+                <span
+                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-500"
+                  >Inactive</span
+                >
+              }
+            </td>
+            <td class="px-5 py-3 text-neutral-600">
+              <span class="whitespace-nowrap">{{ r.createdAt | date: 'MMM d, y' }}</span>
+            </td>
+            <td class="px-5 py-3 text-neutral-600">
+              <span class="text-neutral-500">{{ r.createdBy || '—' }}</span>
+            </td>
+            <td class="px-5 py-3">
+              <div class="flex justify-end gap-1">
+                <button
+                  type="button"
+                  class="btn btn-icon btn-sm btn-light"
+                  aria-label="Edit"
+                  (click)="openEdit(r)"
+                >
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-icon btn-sm bg-red-50 text-red-600 hover:bg-red-100"
+                  aria-label="Delete"
+                  (click)="toDelete.set(r)"
+                >
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8" class="p-12 text-center text-neutral-400">
+              <i class="fa-solid fa-wheat-awn mb-2 block text-3xl"></i>No ingredients found
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-ingredient-drawer
+  [open]="showForm()"
+  [item]="editing()"
+  (closed)="showForm.set(false)"
+  (saved)="save($event)"
+/>
+
+<app-confirm-dialog
+  [open]="!!toDelete()"
+  title="Remove ingredient"
+  [message]="'Remove ' + toDelete()?.name + '?'"
+  confirmLabel="Remove"
+  (confirmed)="confirmDelete()"
+  (cancelled)="toDelete.set(null)"
+/>

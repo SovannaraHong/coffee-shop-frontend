@@ -1,0 +1,141 @@
+<app-page-header title="Add-ons" subtitle="Extras customers can add to a drink">
+  <button type="button" class="btn btn-primary" (click)="openAdd()">
+    <i class="fa-solid fa-plus"></i> Add add-on
+  </button>
+</app-page-header>
+
+<div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+  <div class="flex gap-1 overflow-x-auto">
+    @for (t of tabs; track t) {
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
+        [class]="
+          tab() === t
+            ? 'bg-primary text-white'
+            : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+        "
+        (click)="tab.set(t)"
+      >
+        {{ t === 'all' ? 'All' : t }}
+        <span
+          class="rounded-full px-1.5 text-xs"
+          [class]="tab() === t ? 'bg-white/25' : 'bg-neutral-100 text-neutral-500'"
+          >{{ tabCount(t) }}</span
+        >
+      </button>
+    }
+  </div>
+  <div class="relative md:w-64">
+    <i
+      class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+    ></i>
+    <input
+      type="search"
+      class="input pl-9"
+      placeholder="Search add-ons…"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </div>
+</div>
+
+<div class="card overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[760px] text-left text-sm">
+      <thead class="border-b border-neutral-200 bg-neutral-50 text-xs font-medium text-neutral-500">
+        <tr>
+          <th class="px-5 py-3">Add-on</th>
+          <th class="px-5 py-3">Price</th>
+          <th class="px-5 py-3">Status</th>
+          <th class="px-5 py-3">Created</th>
+          <th class="px-5 py-3">Created by</th>
+          <th class="px-5 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-neutral-100">
+        @for (r of filtered(); track r.id) {
+          <tr class="transition-colors hover:bg-neutral-50">
+            <td class="px-5 py-3 text-neutral-600">
+              <a
+                [routerLink]="['/addons', r.id, 'ingredients']"
+                class="font-medium text-neutral-900 hover:text-[#e95f37] hover:underline"
+                >{{ r.name }}</a
+              >
+            </td>
+            <td class="px-5 py-3 text-neutral-600">{{ r.price | currency }}</td>
+            <td class="px-5 py-3 text-neutral-600">
+              @if (r.isActive) {
+                <span
+                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-700"
+                  >Active</span
+                >
+              } @else {
+                <span
+                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-600"
+                  >Inactive</span
+                >
+              }
+            </td>
+            <td class="px-5 py-3 text-neutral-600">
+              <span class="whitespace-nowrap">{{ r.createdAt | date: 'MMM d, y' }}</span>
+            </td>
+            <td class="px-5 py-3 text-neutral-600">
+              <span class="text-neutral-500">{{ r.createdBy || '—' }}</span>
+            </td>
+            <td class="px-5 py-3">
+              <div class="flex justify-end gap-1">
+                <a
+                  [routerLink]="['/addons', r.id, 'ingredients']"
+                  class="btn btn-icon btn-sm btn-light"
+                  aria-label="Manage ingredients"
+                  title="Manage ingredients"
+                >
+                  <i class="fa-solid fa-wheat-awn"></i>
+                </a>
+                <button
+                  type="button"
+                  class="btn btn-icon btn-sm btn-light"
+                  aria-label="Edit"
+                  (click)="openEdit(r)"
+                >
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-icon btn-sm bg-red-50 text-red-600 hover:bg-red-100"
+                  aria-label="Delete"
+                  (click)="toDelete.set(r)"
+                >
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="p-12 text-center text-neutral-400">
+              <i class="fa-solid fa-mug-saucer mb-2 block text-3xl"></i>No add-ons found
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<app-addon-drawer
+  [open]="showForm()"
+  [item]="editing()"
+  (closed)="showForm.set(false)"
+  (saved)="save($event)"
+/>
+
+<app-confirm-dialog
+  [open]="!!toDelete()"
+  title="Remove add-on"
+  [message]="'Remove ' + toDelete()?.name + '?'"
+  confirmLabel="Remove"
+  (confirmed)="confirmDelete()"
+  (cancelled)="toDelete.set(null)"
+/>

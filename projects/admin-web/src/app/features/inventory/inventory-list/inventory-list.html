@@ -1,0 +1,182 @@
+<!-- Header -->
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <h1 class="text-[28px] font-normal leading-tight text-neutral-900">Inventory</h1>
+    <p class="mt-1 text-[15px] text-neutral-900">Manage your product inventory</p>
+  </div>
+  <button
+    type="button"
+    class="rounded-md bg-[#e95f37] px-4 py-2.5 text-[15px] text-white hover:bg-[#d4532e]"
+    (click)="openAdd()"
+  >
+    Add Product
+  </button>
+</div>
+
+<!-- Toolbar -->
+<div class="mb-4 flex items-center justify-between">
+  <input
+    type="search"
+    placeholder="Search products..."
+    class="h-[42px] w-[266px] rounded-md border border-neutral-200 bg-white px-4 text-[15px] text-neutral-700 placeholder-neutral-500 outline-none focus:border-neutral-400"
+    [value]="search()"
+    (input)="setSearch($any($event.target).value)"
+  />
+  <div class="flex items-center gap-2">
+    <button
+      type="button"
+      class="flex h-[42px] items-center gap-1.5 rounded-md border border-neutral-700 bg-white px-4 text-[15px] text-neutral-700 hover:bg-neutral-50"
+    >
+      <i class="fa-solid fa-filter text-xs"></i> Filter
+    </button>
+    <button
+      type="button"
+      class="flex h-[42px] items-center gap-1.5 rounded-md border border-neutral-700 bg-white px-4 text-[15px] text-neutral-700 hover:bg-neutral-50"
+    >
+      <i class="fa-regular fa-file-excel text-xs"></i> Excel
+    </button>
+    <button
+      type="button"
+      class="h-[42px] rounded-md border border-neutral-700 bg-white px-4 text-[15px] text-neutral-700 hover:bg-neutral-50"
+    >
+      PDF
+    </button>
+  </div>
+</div>
+
+<!-- Table card -->
+<div class="overflow-hidden rounded-md border border-neutral-200 bg-white">
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-[15px]">
+      <thead>
+        <tr class="h-[42px] bg-[#f7f7f7] font-normal text-neutral-900">
+          <th class="w-[540px] px-2.5 font-normal">Image</th>
+          <th class="font-normal">Code</th>
+          <th class="font-normal">Category</th>
+          <th class="font-normal">Brand</th>
+          <th class="font-normal">Price</th>
+          <th class="font-normal">Unit</th>
+          <th class="font-normal">Quantity</th>
+          <th class="pr-6 font-normal">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (i of paged(); track i.id) {
+          <tr class="h-[60px] border-t border-neutral-200 text-neutral-700 hover:bg-neutral-100">
+            <td class="px-2.5">
+              <div class="flex items-center gap-4">
+                <div
+                  class="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-md bg-neutral-200 text-neutral-500"
+                >
+                  <i class="fa-solid fa-box"></i>
+                </div>
+                <span class="text-neutral-600">{{ i.name }}</span>
+              </div>
+            </td>
+            <td>{{ i.code }}</td>
+            <td>{{ i.category }}</td>
+            <td>{{ supplierName(i.supplierId) }}</td>
+            <td>{{ i.costPerUnit | currency }}</td>
+            <td>{{ i.unit }}</td>
+            <td>{{ i.quantity }}</td>
+            <td class="pr-6">
+              <button
+                type="button"
+                class="mr-3 text-neutral-600 hover:text-neutral-900"
+                aria-label="Edit"
+                (click)="openEdit(i)"
+              >
+                <i class="fa-regular fa-pen-to-square text-xs"></i>
+              </button>
+              <button
+                type="button"
+                class="text-red-500 hover:text-red-700"
+                aria-label="Delete"
+                (click)="toDelete.set(i)"
+              >
+                <i class="fa-regular fa-trash-can text-xs"></i>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8" class="py-12 text-center text-neutral-400">No items found</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer / pagination -->
+  <div class="flex items-center justify-between border-t border-neutral-200 px-2.5 py-2">
+    <span class="text-[15px] text-neutral-900">Showing product per page</span>
+    <div class="flex overflow-hidden rounded-md border border-neutral-200 text-[15px]">
+      <button
+        type="button"
+        class="bg-neutral-200 px-3.5 py-1.5 text-neutral-600 disabled:cursor-default"
+        [disabled]="page() === 1"
+        (click)="goTo(page() - 1)"
+      >
+        Previous
+      </button>
+      @for (p of pages(); track p) {
+        <button
+          type="button"
+          class="border-l border-neutral-200 px-3.5 py-1.5"
+          [class]="
+            p === page()
+              ? 'bg-[#e95f37] text-white'
+              : 'bg-white text-neutral-700 hover:bg-neutral-100'
+          "
+          (click)="goTo(p)"
+        >
+          {{ p }}
+        </button>
+      }
+      <button
+        type="button"
+        class="border-l border-neutral-200 bg-white px-3.5 py-1.5 text-neutral-700 hover:bg-neutral-100"
+        [disabled]="page() === pageCount()"
+        (click)="goTo(page() + 1)"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div>
+
+<p class="mt-14 pb-10 text-center text-[15px] text-neutral-600">
+  Copyright © 2026 InApp Inventory Dashboard. Developed by
+  <a class="text-[#e95f37]">CodesCandy</a> • Distributed by <a class="text-[#e95f37]">ThemeWagon</a>
+</p>
+
+<!-- Add / edit modal (unchanged) -->
+<app-modal
+  [open]="showForm()"
+  [title]="editing() ? 'Edit inventory item' : 'Add inventory item'"
+  (closed)="showForm.set(false)"
+>
+  <form
+    [formGroup]="form"
+    (ngSubmit)="save()"
+    novalidate
+    id="inventoryForm"
+    class="grid gap-4 sm:grid-cols-2"
+  >
+    <!-- keep your existing form fields here -->
+  </form>
+  <ng-container modal-footer>
+    <button type="button" class="btn btn-outline" (click)="showForm.set(false)">Cancel</button>
+    <button type="submit" form="inventoryForm" class="btn btn-primary">
+      {{ editing() ? 'Save changes' : 'Add item' }}
+    </button>
+  </ng-container>
+</app-modal>
+
+<app-confirm-dialog
+  [open]="!!toDelete()"
+  title="Delete item"
+  [message]="'Remove ' + toDelete()?.name + ' from inventory?'"
+  (confirmed)="confirmDelete()"
+  (cancelled)="toDelete.set(null)"
+/>

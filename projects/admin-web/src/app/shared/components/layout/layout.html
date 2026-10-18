@@ -1,0 +1,240 @@
+<!-- Mobile overlay -->
+@if (mobileOpen()) {
+  <div
+    class="fixed inset-0 z-30 bg-black/45 backdrop-blur-[1px] lg:hidden"
+    (click)="mobileOpen.set(false)"
+  ></div>
+}
+
+<!-- SIDEBAR -->
+<aside
+  class="fixed inset-y-0 left-0 z-40 flex flex-col border-r border-neutral-700 bg-neutral-800 transition-all duration-300"
+  [class]="sidebarClass()"
+>
+  <div
+    class="flex h-[60px] shrink-0 items-center border-b border-neutral-700 px-4"
+    [class]="collapsed() ? 'lg:justify-center' : ''"
+  >
+    <a routerLink="/dashboard">
+      <span [class]="hideWhenCollapsed()"><app-logo /></span>
+      <span class="hidden" [class]="collapsed() ? 'lg:inline' : ''"
+        ><app-logo [compact]="true"
+      /></span>
+    </a>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto px-3 py-3">
+    @for (section of sections; track $index) {
+      @if (!$first) {
+        <div class="mx-1 my-2 border-t border-neutral-700"></div>
+      }
+      <ul class="space-y-0.5">
+        @for (item of section; track item.label) {
+          <li>
+            @if (item.children) {
+              <!-- Group: parent row + collapsible children -->
+              <button
+                type="button"
+                [title]="item.label"
+                [attr.aria-expanded]="isOpen(item.label)"
+                class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-neutral-100 transition-colors"
+                [class]="
+                  (isOpen(item.label) && !collapsed() ? 'bg-black ' : 'hover:bg-white/10 ') +
+                  linkClass()
+                "
+                (click)="toggleGroup(item.label)"
+              >
+                <i class="fa-solid w-5 text-center text-base" [class]="item.icon"></i>
+                <span class="flex-1" [class]="hideWhenCollapsed()">{{ item.label }}</span>
+                <i
+                  class="fa-solid text-xs text-neutral-300"
+                  [class]="
+                    hideWhenCollapsed() +
+                    ' ' +
+                    (isOpen(item.label) ? 'fa-chevron-down' : 'fa-chevron-right')
+                  "
+                ></i>
+              </button>
+
+              @if (!collapsed()) {
+                <div
+                  class="grid transition-[grid-template-rows] duration-300"
+                  [class]="isOpen(item.label) ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'"
+                >
+                  <ul
+                    class="space-y-0.5 overflow-hidden"
+                    [class]="isOpen(item.label) ? 'pt-1' : ''"
+                  >
+                    @for (child of item.children; track child.route) {
+                      <li>
+                        <a
+                          [routerLink]="child.route"
+                          routerLinkActive="!bg-white/15 !text-white"
+                          [tabindex]="isOpen(item.label) ? 0 : -1"
+                          (click)="mobileOpen.set(false)"
+                          class="flex items-center gap-3 rounded-lg py-2.5 pl-6 pr-3 text-sm text-neutral-300 transition-colors hover:bg-white/10 hover:text-white"
+                        >
+                          <i class="fa-solid w-5 text-center text-xs" [class]="child.icon"></i>
+                          {{ child.label }}
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            } @else {
+              <!-- Leaf: direct link -->
+              <a
+                [routerLink]="item.route"
+                routerLinkActive="!bg-black !text-white"
+                [title]="item.label"
+                (click)="mobileOpen.set(false)"
+                class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-neutral-100 transition-colors hover:bg-white/10"
+                [class]="linkClass()"
+              >
+                <i class="fa-solid w-5 text-center text-base" [class]="item.icon"></i>
+                <span [class]="hideWhenCollapsed()">{{ item.label }}</span>
+              </a>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </nav>
+
+  <div class="shrink-0 border-t border-neutral-700 p-3">
+    <a
+      routerLink="/login"
+      title="Log out"
+      class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-neutral-100 transition-colors hover:bg-red-500/15 hover:text-red-400"
+      [class]="linkClass()"
+    >
+      <i class="fa-solid fa-right-from-bracket w-5 text-center text-base"></i>
+      <span [class]="hideWhenCollapsed()">Log out</span>
+    </a>
+  </div>
+</aside>
+
+<!-- TOPBAR -->
+<header
+  class="fixed left-0 right-0 top-0 z-20 flex h-[60px] items-center justify-between border-b border-neutral-200 bg-white px-4 transition-all duration-300"
+  [class]="topbarClass()"
+>
+  <div class="flex items-center gap-3">
+    <button
+      type="button"
+      class="btn btn-light btn-icon hidden lg:inline-flex"
+      aria-label="Toggle sidebar"
+      (click)="collapsed.set(!collapsed())"
+    >
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <button
+      type="button"
+      class="btn btn-light btn-icon lg:hidden"
+      aria-label="Open menu"
+      (click)="mobileOpen.set(true)"
+    >
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="relative hidden md:block">
+      <i
+        class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+      ></i>
+      <input type="search" class="input w-72 pl-9" placeholder="Search orders, products…" />
+    </div>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <!-- Notifications -->
+    <div class="relative" (appClickOutside)="notifOpen.set(false)">
+      <button
+        type="button"
+        class="btn btn-light btn-icon relative rounded-full"
+        aria-label="Notifications"
+        (click)="notifOpen.set(!notifOpen()); userOpen.set(false)"
+      >
+        <i class="fa-regular fa-bell"></i>
+        <span
+          class="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-red-500 text-[10px] font-semibold text-white"
+          >{{ notifications.length }}</span
+        >
+      </button>
+      @if (notifOpen()) {
+        <div
+          class="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg"
+        >
+          <div class="border-b border-neutral-100 px-4 py-3 text-sm font-semibold text-neutral-900">
+            Notifications
+          </div>
+          <ul class="divide-y divide-neutral-100">
+            @for (n of notifications; track n.title) {
+              <li class="flex gap-3 px-4 py-3">
+                <span
+                  class="grid size-9 shrink-0 place-items-center rounded-full text-sm"
+                  [class]="n.tone"
+                  ><i class="fa-solid" [class]="n.icon"></i
+                ></span>
+                <div class="min-w-0 text-sm">
+                  <p class="font-medium text-neutral-900">{{ n.title }}</p>
+                  <p class="text-neutral-500">{{ n.text }}</p>
+                  <p class="mt-0.5 text-xs text-neutral-400">{{ n.time }}</p>
+                </div>
+              </li>
+            }
+          </ul>
+          <a
+            href="#"
+            class="block border-t border-neutral-100 px-4 py-2.5 text-center text-sm text-primary hover:bg-neutral-50"
+            >View all notifications</a
+          >
+        </div>
+      }
+    </div>
+
+    <!-- User menu -->
+    <div class="relative ml-1" (appClickOutside)="userOpen.set(false)">
+      <button
+        type="button"
+        class="flex items-center gap-2 rounded-full p-0.5 hover:bg-neutral-100"
+        (click)="userOpen.set(!userOpen()); notifOpen.set(false)"
+      >
+        <img [src]="user.avatar" alt="" class="size-9 rounded-full object-cover" />
+      </button>
+      @if (userOpen()) {
+        <div
+          class="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg"
+        >
+          <div class="flex items-center gap-3 border-b border-neutral-100 px-4 py-3">
+            <img [src]="user.avatar" alt="" class="size-10 rounded-full object-cover" />
+            <div class="text-sm">
+              <p class="font-medium text-neutral-900">{{ user.name }}</p>
+              <p class="text-neutral-500">{{ user.role }}</p>
+            </div>
+          </div>
+          <div class="flex flex-col p-2 text-sm">
+            <a href="#" class="rounded-lg px-3 py-2 text-neutral-700 hover:bg-neutral-100"
+              ><i class="fa-regular fa-user mr-2 w-4 text-neutral-400"></i>My profile</a
+            >
+            <a href="#" class="rounded-lg px-3 py-2 text-neutral-700 hover:bg-neutral-100"
+              ><i class="fa-solid fa-gear mr-2 w-4 text-neutral-400"></i>Settings</a
+            >
+            <a routerLink="/login" class="rounded-lg px-3 py-2 text-red-600 hover:bg-red-50"
+              ><i class="fa-solid fa-right-from-bracket mr-2 w-4"></i>Log out</a
+            >
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</header>
+
+<!-- CONTENT -->
+<main class="min-h-screen pt-[60px] transition-all duration-300" [class]="contentClass()">
+  <div class="p-4 sm:p-6 lg:p-8">
+    <router-outlet />
+    <footer class="mt-10 text-center text-xs text-neutral-400">
+      © 2026 Brewly Coffee · Admin dashboard
+    </footer>
+  </div>
+</main>

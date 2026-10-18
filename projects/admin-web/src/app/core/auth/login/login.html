@@ -1,0 +1,45 @@
+<div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 via-white to-amber-50 p-4">
+  <div class="card w-full max-w-md p-8 shadow-sm sm:p-10">
+    <div class="mb-8 text-center">
+      <a routerLink="/dashboard" class="mb-5 inline-block"><app-logo /></a>
+      <h1 class="text-xl font-semibold text-neutral-900">Sign in to your account</h1>
+      <p class="mt-1 text-sm text-neutral-500">Welcome back! Please enter your details.</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="space-y-4">
+      <div>
+        <label for="email" class="label">Email address</label>
+        <input id="email" type="email" class="input" formControlName="email" placeholder="name@example.com" autocomplete="email" />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <p class="field-error">Please enter a valid email.</p>
+        }
+      </div>
+
+      <div>
+        <label for="password" class="label flex justify-between">
+          <span>Password</span>
+          <a href="#" class="text-xs font-normal text-primary hover:underline">Forgot password?</a>
+        </label>
+        <div class="relative">
+          <input id="password" [type]="showPassword() ? 'text' : 'password'" class="input pr-10" formControlName="password" placeholder="••••••••" autocomplete="current-password" />
+          <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600" aria-label="Show password" (click)="showPassword.set(!showPassword())">
+            <i class="fa-regular" [class]="showPassword() ? 'fa-eye-slash' : 'fa-eye'"></i>
+          </button>
+        </div>
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <p class="field-error">Password must be at least 6 characters.</p>
+        }
+      </div>
+
+      <label class="flex items-center gap-2 text-sm text-neutral-600">
+        <input type="checkbox" class="size-4 rounded border-neutral-300 accent-primary" formControlName="remember" /> Remember me
+      </label>
+
+      <button type="submit" class="btn btn-primary w-full">Sign in</button>
+    </form>
+
+    <p class="mt-6 text-center text-sm text-neutral-500">
+      Don't have an account? <a routerLink="/register" class="font-medium text-primary hover:underline">Sign up</a>
+    </p>
+  </div>
+</div>
