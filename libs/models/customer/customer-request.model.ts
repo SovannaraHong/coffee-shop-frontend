@@ -10,3 +10,9 @@ export interface CustomerRegisterRequest {
   phone: string;
   password: string;
 }
+export interface CustomerUpdateRequest {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  isActive: boolean;
+}
