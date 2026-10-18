@@ -1,0 +1,152 @@
+@if (mounted()) {
+  <div class="fixed inset-0 z-[100]" [class.pointer-events-none]="!open()">
+    <!-- Backdrop -->
+    <div
+      class="absolute inset-0 bg-neutral-900/40 backdrop-blur-[2px] transition-opacity duration-300"
+      [class]="shown() ? 'opacity-100' : 'opacity-0'"
+      (click)="closed.emit()"
+    ></div>
+
+    <!-- Panel -->
+    <aside
+      class="absolute right-0 top-0 flex h-full flex-col bg-white shadow-2xl"
+      style="
+        width: min(560px, 100vw);
+        transform: translateX(100%);
+        visibility: hidden;
+        transition:
+          transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
+          visibility 350ms;
+      "
+      [style.transform]="shown() ? 'translateX(0)' : 'translateX(100%)'"
+      [style.visibility]="shown() ? 'visible' : 'hidden'"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Assign ingredient form"
+    >
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-neutral-200 px-8 py-5">
+        <div>
+          <h2 class="text-xl font-medium text-neutral-900">
+            {{ item() ? 'Edit quantity' : 'Assign ingredient' }}
+          </h2>
+          <p class="mt-0.5 text-sm text-neutral-500">Ingredient and quantity used per add-on</p>
+        </div>
+        <button
+          type="button"
+          class="grid size-9 place-items-center rounded-lg bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200"
+          aria-label="Close"
+          (click)="closed.emit()"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <form
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        novalidate
+        id="addonIngredientForm"
+        class="flex-1 overflow-y-auto px-8 py-6"
+      >
+        <div class="grid gap-6">
+          @if (error()) {
+            <div
+              class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              role="alert"
+            >
+              <i class="fa-solid fa-circle-exclamation mr-2"></i>{{ error() }}
+            </div>
+          }
+
+          <div>
+            <label for="ai-ingredient" class="mb-1.5 block text-sm font-medium text-neutral-700"
+              >Ingredient</label
+            >
+            <div class="relative">
+              <i
+                class="fa-solid fa-wheat-awn pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+              ></i>
+              <select
+                id="ai-ingredient"
+                formControlName="ingredientId"
+                class="h-[42px] w-full rounded-md border border-neutral-200 bg-white pl-9 pr-3.5 text-[15px] outline-none focus:border-[#e95f37] disabled:bg-neutral-50 disabled:text-neutral-500"
+              >
+                <option [ngValue]="null" disabled>Select an ingredient…</option>
+                @for (i of ingredients(); track i.id) {
+                  <option [ngValue]="i.id">{{ i.name }} ({{ i.unit }})</option>
+                }
+              </select>
+            </div>
+            @if (form.controls.ingredientId.touched && form.controls.ingredientId.invalid) {
+              <p class="mt-1 text-xs text-red-500">Please select an ingredient.</p>
+            }
+            @if (!item() && ingredients().length === 0) {
+              <p class="mt-1 text-xs text-amber-600">
+                All active ingredients are already assigned to this add-on.
+              </p>
+            }
+          </div>
+
+          <div>
+            <label for="ai-quantity" class="mb-1.5 block text-sm font-medium text-neutral-700"
+              >Quantity required</label
+            >
+            <div class="relative">
+              <i
+                class="fa-solid fa-scale-balanced pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+              ></i>
+              <input
+                id="ai-quantity"
+                type="number"
+                step="any"
+                min="0"
+                formControlName="quantityRequired"
+                class="h-[42px] w-full rounded-md border border-neutral-200 pl-9 pr-14 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+              />
+              @if (selectedUnit()) {
+                <span
+                  class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-neutral-400"
+                  >{{ selectedUnit() }}</span
+                >
+              }
+            </div>
+            @if (form.controls.quantityRequired.touched && form.controls.quantityRequired.invalid) {
+              <p class="mt-1 text-xs text-red-500">Quantity must be greater than 0.</p>
+            } @else {
+              <p class="mt-1 text-xs text-neutral-400">
+                Amount of this ingredient deducted from stock each time the add-on is ordered.
+              </p>
+            }
+          </div>
+        </div>
+      </form>
+
+      <!-- Footer -->
+      <div class="flex gap-3 border-t border-neutral-200 px-8 py-4">
+        <button
+          type="button"
+          class="h-[42px] flex-1 rounded-md border border-neutral-700 bg-white text-[15px] text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+          [disabled]="saving()"
+          (click)="closed.emit()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          form="addonIngredientForm"
+          [disabled]="saving()"
+          class="h-[42px] flex-1 rounded-md bg-[#e95f37] text-[15px] text-white hover:bg-[#d4532e] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          @if (saving()) {
+            <i class="fa-solid fa-spinner fa-spin mr-1.5 text-xs"></i>Saving…
+          } @else {
+            <i class="fa-solid fa-check mr-1.5 text-xs"></i
+            >{{ item() ? 'Save changes' : 'Assign ingredient' }}
+          }
+        </button>
+      </div>
+    </aside>
+  </div>
+}

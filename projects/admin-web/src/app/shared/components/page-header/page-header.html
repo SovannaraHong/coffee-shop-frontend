@@ -1,0 +1,9 @@
+<div class="mb-8 mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h1 class="text-[28px] font-normal leading-tight text-neutral-900">{{ title() }}</h1>
+    @if (subtitle()) {
+      <p class="mt-1 text-sm text-neutral-900">{{ subtitle() }}</p>
+    }
+  </div>
+  <div class="flex flex-wrap items-center gap-2"><ng-content /></div>
+</div>

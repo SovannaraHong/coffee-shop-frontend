@@ -1,0 +1,54 @@
+<div class="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 via-white to-amber-50 p-4">
+  <div class="card w-full max-w-md p-8 shadow-sm sm:p-10">
+    <div class="mb-8 text-center">
+      <a routerLink="/dashboard" class="mb-5 inline-block"><app-logo /></a>
+      <h1 class="text-xl font-semibold text-neutral-900">Create your account</h1>
+      <p class="mt-1 text-sm text-neutral-500">Join the team and start managing your shop.</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="space-y-4">
+      <div>
+        <label for="fullName" class="label">Full name</label>
+        <input id="fullName" type="text" class="input" formControlName="fullName" placeholder="Jane Doe" />
+        @if (form.controls.fullName.touched && form.controls.fullName.invalid) {
+          <p class="field-error">Please enter your name.</p>
+        }
+      </div>
+      <div>
+        <label for="email" class="label">Email address</label>
+        <input id="email" type="email" class="input" formControlName="email" placeholder="name@example.com" />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <p class="field-error">Please enter a valid email.</p>
+        }
+      </div>
+      <div>
+        <label for="password" class="label">Password</label>
+        <input id="password" type="password" class="input" formControlName="password" placeholder="Create a password" />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <p class="field-error">Password must be at least 6 characters.</p>
+        }
+      </div>
+      <div>
+        <label for="confirmPassword" class="label">Confirm password</label>
+        <input id="confirmPassword" type="password" class="input" formControlName="confirmPassword" placeholder="Repeat password" />
+        @if (form.controls.confirmPassword.touched && form.hasError('mismatch')) {
+          <p class="field-error">Passwords must match.</p>
+        }
+      </div>
+      <div>
+        <label class="flex items-center gap-2 text-sm text-neutral-600">
+          <input type="checkbox" class="size-4 rounded border-neutral-300 accent-primary" formControlName="terms" />
+          <span>I agree to the <a href="#" class="text-primary hover:underline">terms and privacy</a></span>
+        </label>
+        @if (form.controls.terms.touched && form.controls.terms.invalid) {
+          <p class="field-error">You must agree before continuing.</p>
+        }
+      </div>
+      <button type="submit" class="btn btn-primary w-full">Sign up</button>
+    </form>
+
+    <p class="mt-6 text-center text-sm text-neutral-500">
+      Already have an account? <a routerLink="/login" class="font-medium text-primary hover:underline">Sign in</a>
+    </p>
+  </div>
+</div>

@@ -57,8 +57,4 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/components/verify-otp/verify-otp').then((m) => m.VerifyOtp),
   },
-  {
-    path: 'rate-limit',
-    loadComponent: () => import('./pages/rate-limit/rate-limit').then((m) => m.RateLimit),
-  },
 ];

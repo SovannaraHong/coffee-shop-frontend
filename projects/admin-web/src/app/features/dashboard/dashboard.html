@@ -1,0 +1,228 @@
+<app-page-header
+  title="Dashboard"
+  subtitle="Here's what's happening at the shop today — {{ today | date: 'EEEE, MMM d' }}"
+>
+  <a routerLink="/orders" class="btn btn-primary">View orders</a>
+</app-page-header>
+
+<!-- KPI cards -->
+<div class="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  <app-stat-card
+    label="Total Sales"
+    icon="fa-clipboard-list"
+    tone="primary"
+    [value]="(todaysSales() | currency)!"
+    note="+5% since last month"
+  />
+  <app-stat-card
+    label="Total Purchase"
+    icon="fa-repeat"
+    tone="green"
+    [value]="todaysOrderCount()"
+    note="+22% since last month"
+  />
+  <app-stat-card
+    label="Total Expenses"
+    icon="fa-dollar-sign"
+    tone="sky"
+    [value]="customerCount()"
+    note="+10% since last month"
+  />
+  <app-stat-card
+    label="Invoice Due"
+    icon="fa-file-lines"
+    tone="amber"
+    [value]="lowStockCount()"
+    note="+35% since last month"
+  />
+</div>
+
+<!-- Summary cards -->
+<div class="mb-4 grid gap-4 md:grid-cols-3">
+  <div class="card px-6 py-6">
+    <div class="flex items-start justify-between border-b border-neutral-200 pb-9">
+      <div>
+        <p class="text-2xl font-semibold text-neutral-900">$25,458</p>
+        <p class="mt-2 text-[15px] text-neutral-800">Total Profit</p>
+      </div>
+      <i class="fa-regular fa-copy text-3xl text-[#e8643c]"></i>
+    </div>
+    <div class="mt-5 flex items-center justify-between text-[13px]">
+      <p class="text-neutral-600"><span class="text-[#00c853]">+35%</span> vs Last Month</p>
+      <a routerLink="/reports" class="text-[#e8643c] underline">View</a>
+    </div>
+  </div>
+  <div class="card px-6 py-6">
+    <div class="flex items-start justify-between border-b border-neutral-200 pb-9">
+      <div>
+        <p class="text-2xl font-semibold text-neutral-900">{{ avgOrderValue() | currency }}</p>
+        <p class="mt-2 text-[15px] text-neutral-800">Total Payment Returns</p>
+      </div>
+      <i class="fa-regular fa-credit-card text-3xl text-[#ef4444]"></i>
+    </div>
+    <div class="mt-5 flex items-center justify-between text-[13px]">
+      <p class="text-neutral-600"><span class="text-[#ef4444]">-20%</span> vs Last Month</p>
+      <a routerLink="/orders" class="text-[#e8643c] underline">View</a>
+    </div>
+  </div>
+  <div class="card px-6 py-6">
+    <div class="flex items-start justify-between border-b border-neutral-200 pb-9">
+      <div>
+        <p class="text-2xl font-semibold text-neutral-900">$34,458</p>
+        <p class="mt-2 text-[15px] text-neutral-800">Total Expenses</p>
+      </div>
+      <i class="fa-regular fa-money-bill-1 text-3xl text-[#f2b100]"></i>
+    </div>
+    <div class="mt-5 flex items-center justify-between text-[13px]">
+      <p class="text-neutral-600"><span class="text-[#f2b100]">-20%</span> vs Last Month</p>
+      <a routerLink="/inventory" class="text-[#e8643c] underline">View</a>
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="mb-4 grid items-start gap-4 lg:grid-cols-2">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Sales vs Purchase</h2>
+      <select class="select-box">
+        <option>This Year</option>
+        <option>Last Year</option>
+      </select>
+    </div>
+    <div class="px-6 pb-6 pt-10"><app-bar-chart [labels]="weekLabels" [series]="weekSeries" /></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Overall Information</h2>
+      <select class="select-box">
+        <option>Last 6 Months</option>
+        <option>This Month</option>
+      </select>
+    </div>
+    <div class="px-6 pt-6">
+      <p class="text-[15px] text-neutral-800">Customers Overview</p>
+      <app-customer-ring />
+    </div>
+    <div
+      class="mx-1 grid grid-cols-3 divide-x divide-neutral-200 border-t border-neutral-200 py-8 text-center"
+    >
+      <div>
+        <p class="text-[28px] font-semibold text-neutral-900">{{ suppliers().length }}</p>
+        <p class="mt-2 text-sm text-neutral-600">Suppliers</p>
+      </div>
+      <div>
+        <p class="text-[28px] font-semibold text-neutral-900">{{ customerCount() }}</p>
+        <p class="mt-2 text-sm text-neutral-600">Customers</p>
+      </div>
+      <div>
+        <p class="text-[28px] font-semibold text-neutral-900">{{ todaysOrderCount() }}</p>
+        <p class="mt-2 text-sm text-neutral-600">Orders</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lists -->
+<div class="grid gap-4 lg:grid-cols-3">
+  <!-- Top selling -->
+  <div class="card overflow-hidden">
+    <div class="card-header">
+      <h2 class="card-title">Top Selling Products</h2>
+      <span class="select-box text-neutral-800"
+        ><i class="fa-regular fa-calendar mr-1"></i>Today</span
+      >
+    </div>
+    <ul class="divide-y divide-neutral-200">
+      @for (t of topSelling(); track t.productId; let idx = $index) {
+        <li class="flex items-center gap-4 px-4 py-3">
+          <span
+            class="grid size-[52px] shrink-0 place-items-center rounded-md bg-neutral-100 text-neutral-500"
+            ><i class="fa-solid fa-mug-hot"></i
+          ></span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-[15px] text-neutral-900">{{ t.product!.name }}</p>
+            <p class="mt-0.5 text-[13px] text-neutral-600">
+              <span class="font-semibold text-neutral-900">{{
+                t.product!.price | currency: 'USD' : 'symbol' : '1.0-0'
+              }}</span>
+              &nbsp;•&nbsp; {{ t.units }} Units
+            </p>
+          </div>
+          <span
+            class="rounded border px-2 py-0.5 text-[11px] font-semibold"
+            [class]="pillTones[idx % 5]"
+            >{{ t.share }}%</span
+          >
+        </li>
+      }
+    </ul>
+  </div>
+
+  <!-- Low stock -->
+  <div class="card overflow-hidden">
+    <div class="card-header">
+      <h2 class="card-title">Low Stock Products</h2>
+      <a routerLink="/inventory" class="text-sm text-[#e8643c] underline">View All</a>
+    </div>
+    <ul class="divide-y divide-neutral-200">
+      @for (i of lowStockItems(); track i.id) {
+        <li class="flex items-center gap-4 px-4 py-3">
+          <span
+            class="grid size-[52px] shrink-0 place-items-center rounded-md bg-neutral-100 text-neutral-500"
+            ><i class="fa-solid fa-box"></i
+          ></span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-[15px] text-neutral-900">{{ i.name }}</p>
+            <p class="mt-0.5 text-[13px] text-neutral-600">ID: #{{ i.code }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[15px] font-semibold text-[#e8643c]">
+              {{ i.quantity < 10 ? '0' + i.quantity : i.quantity }}
+            </p>
+            <p class="text-[13px] text-neutral-600">In Stock</p>
+          </div>
+        </li>
+      }
+    </ul>
+  </div>
+
+  <!-- Recent sales -->
+  <div class="card overflow-hidden">
+    <div class="card-header">
+      <h2 class="card-title">Recent Sales</h2>
+      <span class="select-box text-neutral-800"
+        ><i class="fa-regular fa-calendar mr-1"></i>Weekly</span
+      >
+    </div>
+    <ul class="divide-y divide-neutral-200">
+      @for (o of recentOrders(); track o.id) {
+        <li>
+          <a
+            [routerLink]="['/orders', o.id]"
+            class="flex items-center gap-4 px-4 py-3 hover:bg-neutral-50"
+          >
+            <span
+              class="grid size-[52px] shrink-0 place-items-center rounded-md bg-neutral-100 text-sm font-semibold text-neutral-600"
+              >{{ o.customer.charAt(0) }}</span
+            >
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-[15px] text-neutral-900">{{ o.customer }}</p>
+              <p class="mt-0.5 text-[13px] text-neutral-600">
+                <span class="font-semibold text-neutral-900">{{ o.number }}</span> &nbsp;•&nbsp;
+                {{ o.total | currency }}
+              </p>
+            </div>
+            <app-status-badge [status]="o.status" />
+          </a>
+        </li>
+      }
+    </ul>
+  </div>
+</div>
+
+<footer class="mt-12 pb-10 text-center text-[15px] text-neutral-600">
+  Copyright © 2026 InApp Inventory Dashboard. Developed by
+  <a class="text-[#e8643c]">CodesCandy</a> • Distributed by <a class="text-[#e8643c]">ThemeWagon</a>
+</footer>
