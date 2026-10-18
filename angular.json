@@ -96,7 +96,10 @@
                 "input": "projects/admin-web/public"
               }
             ],
-            "styles": ["projects/admin-web/src/styles.css"]
+            "styles": [
+              "projects/admin-web/src/styles.css",
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css"
+            ]
           },
           "configurations": {
             "production": {
