@@ -12,7 +12,7 @@ import { CategoryResponse } from '../../models/category/category-response.model'
 @Injectable({
   providedIn: 'root',
 })
-export class CategoryService {
+export class CategoryApiService {
   private readonly apiClient = inject(ApiClient);
   private readonly apiUrl = inject(API_URL);
 
@@ -48,13 +48,11 @@ export class CategoryService {
     return this.apiClient.delete<void>(`${this.endpoint}/${id}`);
   }
 
-  // Upload category image
-  uploadCategoryImage(id: number, file: File): Observable<CategoryResponse> {
+  uploadCategoryImage(id: number, file: File) {
     const formData = new FormData();
+    formData.append('file', file);
 
-    formData.append('image', file);
-
-    return this.apiClient.patch<CategoryResponse>(`${this.endpoint}/${id}/image`, formData);
+    return this.apiClient.put<CategoryResponse>(`${this.endpoint}/${id}/image`, formData);
   }
 
   // Change category active status

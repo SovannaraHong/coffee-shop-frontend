@@ -13,107 +13,159 @@
   </button>
 </div>
 
-<!-- Toolbar -->
-<div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-  <div class="inline-flex rounded-xl bg-neutral-100 p-1 text-sm">
-    @for (t of statusTabs; track t.value) {
-      <button
-        type="button"
-        class="rounded-lg px-3.5 py-1.5 font-medium transition-colors"
-        [class]="
-          status() === t.value
-            ? 'bg-white text-neutral-900 shadow-sm'
-            : 'text-neutral-500 hover:text-neutral-700'
-        "
-        (click)="status.set(t.value)"
-      >
-        {{ t.label }}
-      </button>
-    }
+<!-- Error -->
+@if (error(); as message) {
+  <div
+    role="alert"
+    class="mb-5 flex items-center justify-between gap-3 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+  >
+    <span>{{ message }}</span>
+    <button type="button" class="font-semibold underline" (click)="categoryServiceRetry()">
+      Retry
+    </button>
   </div>
-  <div class="relative sm:w-64">
-    <i
-      class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
-    ></i>
-    <input
-      type="search"
-      placeholder="Search categories…"
-      class="h-[38px] w-full rounded-full border border-neutral-200 bg-white pl-9 pr-4 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
-      [value]="search()"
-      (input)="search.set($any($event.target).value)"
-    />
-  </div>
-</div>
+}
 
-<!-- Cards -->
-<div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-  @for (c of filtered(); track c.id) {
-    <div
-      class="group flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:-translate-y-0.5 hover:shadow-md"
-    >
-      <!-- Cover -->
-      <div class="relative h-36 overflow-hidden bg-gradient-to-br from-orange-100 to-orange-200">
-        @if (c.image) {
-          <img
-            [src]="c.image"
-            alt=""
-            class="size-full object-cover transition duration-500 group-hover:scale-105"
-          />
-        } @else {
-          <i
-            class="fa-solid fa-mug-hot absolute -bottom-4 -right-2 text-[110px] text-[#e95f37] opacity-20"
-          ></i>
-        }
-        <span
-          class="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
-          [class]="c.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-white/90 text-neutral-500'"
+<!-- Table card -->
+<div class="overflow-hidden rounded-md border border-neutral-200 bg-white">
+  <!-- Toolbar -->
+  <div
+    class="flex flex-col gap-3 border-b border-neutral-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
+  >
+    <div class="inline-flex rounded-md bg-neutral-100 p-1 text-sm">
+      @for (t of statusTabs; track t.value) {
+        <button
+          type="button"
+          class="rounded px-3.5 py-1.5 transition-colors"
+          [class]="
+            status() === t.value
+              ? 'bg-white text-neutral-900 shadow-sm'
+              : 'text-neutral-600 hover:text-neutral-900'
+          "
+          (click)="status.set(t.value)"
         >
-          <span class="size-1.5 rounded-full bg-current"></span
-          >{{ c.isActive ? 'Active' : 'Inactive' }}
-        </span>
-      </div>
-
-      <!-- Body -->
-      <div class="flex flex-1 flex-col p-5">
-        <h3 class="text-base font-semibold text-neutral-900">{{ c.name }}</h3>
-        <p class="mt-1 line-clamp-2 flex-1 text-sm text-neutral-500">
-          {{ c.description || 'No description' }}
-        </p>
-        <div class="mt-4 flex items-center justify-between border-t border-neutral-100 pt-4">
-          <span class="rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-600">
-            <span class="font-semibold text-neutral-900">{{ counts().get(c.id) ?? 0 }}</span>
-            products
-          </span>
-          <div class="flex gap-1">
-            <button
-              type="button"
-              aria-label="Edit"
-              class="inline-grid size-9 place-items-center rounded-lg bg-neutral-100 text-neutral-600 transition hover:bg-[#e95f37] hover:text-white"
-              (click)="openEdit(c)"
-            >
-              <i class="fa-regular fa-pen-to-square text-sm"></i>
-            </button>
-            <button
-              type="button"
-              aria-label="Delete"
-              class="inline-grid size-9 place-items-center rounded-lg bg-red-50 text-red-500 transition hover:bg-red-500 hover:text-white"
-              (click)="toDelete.set(c)"
-            >
-              <i class="fa-regular fa-trash-can text-sm"></i>
-            </button>
-          </div>
-        </div>
-      </div>
+          {{ t.label }}
+        </button>
+      }
     </div>
-  } @empty {
-    <div
-      class="col-span-full rounded-2xl border border-neutral-200 bg-white p-16 text-center text-neutral-400"
-    >
-      <span
-        class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-neutral-100 text-2xl"
-        ><i class="fa-solid fa-tags"></i
-      ></span>
-      No categories found
+
+    <div class="relative sm:w-64">
+      <i
+        class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+      ></i>
+      <input
+        type="search"
+        placeholder="Search categories…"
+        class="h-[38px] w-full rounded border border-neutral-200 bg-white pl-9 pr-3 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="p-12 text-center">
+      <i class="fa-solid fa-spinner fa-spin text-2xl text-[#e95f37]"></i>
+      <p class="mt-3 text-sm text-neutral-500">Loading categories...</p>
+    </div>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[720px] text-left">
+        <thead>
+          <tr class="border-b border-neutral-200 bg-neutral-50 text-[13px] text-neutral-600">
+            <th class="w-16 px-6 py-3 font-medium">#</th>
+            <th class="px-4 py-3 font-medium">Category</th>
+            <th class="px-4 py-3 font-medium">Description</th>
+            <th class="px-4 py-3 text-center font-medium">Products</th>
+            <th class="px-4 py-3 font-medium">Status</th>
+            <th class="px-6 py-3 text-right font-medium">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-neutral-200">
+          @for (c of filtered(); track c.id; let i = $index) {
+            <tr class="hover:bg-neutral-50">
+              <td class="px-6 py-3.5 text-sm text-neutral-600">{{ i + 1 }}</td>
+
+              <td class="px-4 py-3.5">
+                <div class="flex items-center gap-3">
+                  <span
+                    class="grid size-11 shrink-0 place-items-center overflow-hidden rounded-md bg-[#fde3da] text-[#e95f37]"
+                  >
+                    @if (c.imageUrl) {
+                      <img [src]="c.imageUrl" alt="" class="size-full object-cover" />
+                    } @else {
+                      <i class="fa-solid fa-mug-hot"></i>
+                    }
+                  </span>
+                  <span class="text-[15px] font-medium text-neutral-900">{{ c.name }}</span>
+                </div>
+              </td>
+
+              <td class="max-w-xs px-4 py-3.5 text-sm text-neutral-600">
+                <p class="line-clamp-1">{{ c.description || 'No description' }}</p>
+              </td>
+
+              <td class="px-4 py-3.5 text-center">
+                <span
+                  class="inline-block min-w-8 rounded bg-neutral-100 px-2 py-0.5 text-sm font-semibold text-neutral-900"
+                >
+                  {{ counts().get(c.id) ?? 0 }}
+                </span>
+              </td>
+
+              <td class="px-4 py-3.5">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-semibold"
+                  [class]="
+                    c.isActive ? 'bg-[#d9f7e6] text-[#00b44a]' : 'bg-neutral-100 text-neutral-600'
+                  "
+                >
+                  <span class="size-1.5 rounded-full bg-current"></span>
+                  {{ c.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+
+              <td class="px-6 py-3.5">
+                <div class="flex justify-end gap-1.5">
+                  <button
+                    type="button"
+                    aria-label="Edit"
+                    class="inline-grid size-9 place-items-center rounded-md bg-neutral-100 text-neutral-600 transition hover:bg-[#e95f37] hover:text-white"
+                    (click)="openEdit(c)"
+                  >
+                    <i class="fa-regular fa-pen-to-square text-sm"></i>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Delete"
+                    class="inline-grid size-9 place-items-center rounded-md bg-red-50 text-red-500 transition hover:bg-red-500 hover:text-white"
+                    (click)="toDelete.set(c)"
+                  >
+                    <i class="fa-regular fa-trash-can text-sm"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-6 py-14 text-center text-neutral-400">
+                <span
+                  class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-neutral-100 text-2xl"
+                >
+                  <i class="fa-solid fa-tags"></i>
+                </span>
+                No categories found
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="border-t border-neutral-200 px-6 py-3 text-[13px] text-neutral-600">
+      Showing {{ filtered().length }} {{ filtered().length === 1 ? 'category' : 'categories' }}
     </div>
   }
 </div>
@@ -121,6 +173,8 @@
 <app-category-drawer
   [open]="showDrawer()"
   [category]="editing()"
+  [saving]="saving()"
+  [error]="error()"
   (closed)="showDrawer.set(false)"
   (saved)="onSaved($event)"
 />
@@ -128,9 +182,7 @@
 <app-confirm-dialog
   [open]="!!toDelete()"
   title="Delete category"
-  [message]="
-    'Delete ' + toDelete()?.name + '? Products in this category will become uncategorised.'
-  "
+  [message]="'Delete ' + toDelete()?.name + '?'"
   (confirmed)="confirmDelete()"
   (cancelled)="toDelete.set(null)"
 />

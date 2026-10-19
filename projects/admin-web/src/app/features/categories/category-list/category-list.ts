@@ -5,7 +5,10 @@ import { CategoryService } from '../../../core/services/category-service';
 import { ProductService } from '../../../core/services/product-service';
 import { ConfirmDialog } from '../../../shared/components/confirm-dialog/confirm-dialog';
 import { CategoryResponse } from '../../../../../../../libs/models/category/category-response.model';
-import { CategoryRequest } from '../../../../../../../libs/models/category/category-request.model';
+import {
+  CategoryFormSubmit,
+  CategoryRequest,
+} from '../../../../../../../libs/models/category/category-request.model';
 import { CategoryDrawer } from '../category-drawer/category-drawer';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
@@ -18,6 +21,11 @@ type StatusFilter = 'all' | 'active' | 'inactive';
 export class CategoryList {
   private readonly categoryService = inject(CategoryService);
   private readonly products = inject(ProductService);
+
+  protected readonly items = this.categoryService.items;
+  protected readonly loading = this.categoryService.loading;
+  protected readonly saving = this.categoryService.saving;
+  protected readonly error = this.categoryService.error;
 
   protected readonly statusTabs: { value: StatusFilter; label: string }[] = [
     { value: 'all', label: 'All' },
@@ -34,42 +42,68 @@ export class CategoryList {
 
   protected readonly filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
-    return this.categoryService
-      .items()
-      .filter(
-        (c: CategoryResponse) =>
-          (!q ||
-            c.name.toLowerCase().includes(q) ||
-            (c.description ?? '').toLowerCase().includes(q)) &&
-          (this.status() === 'all' || (this.status() === 'active') === c.isActive),
-      );
+    const status = this.status();
+
+    return this.items().filter((category) => {
+      const matchesSearch =
+        !q ||
+        category.name.toLowerCase().includes(q) ||
+        (category.description ?? '').toLowerCase().includes(q);
+      const matchesStatus = status === 'all' || category.isActive === (status === 'active');
+
+      return matchesSearch && matchesStatus;
+    });
   });
 
   protected readonly counts = computed(() => {
     const map = new Map<number, number>();
-    for (const p of this.products.items()) map.set(p.categoryId, (map.get(p.categoryId) ?? 0) + 1);
+
+    for (const product of this.products.items()) {
+      map.set(product.categoryId, (map.get(product.categoryId) ?? 0) + 1);
+    }
     return map;
   });
-
+  constructor() {
+    void this.categoryService.load();
+  }
   protected openAdd(): void {
     this.editing.set(null);
+    this.categoryService.clearError();
     this.showDrawer.set(true);
   }
   protected openEdit(c: CategoryResponse): void {
     this.editing.set(c);
+    this.categoryService.clearError();
     this.showDrawer.set(true);
   }
 
-  protected onSaved(v: CategoryRequest): void {
+  protected async onSaved(value: CategoryFormSubmit): Promise<void> {
+    if (this.saving()) return;
     const current = this.editing();
-    if (current) this.categoryService.update(current.id, v);
-    else this.categoryService.add(v);
-    this.showDrawer.set(false);
+
+    const success = current
+      ? await this.categoryService.update(current.id, value.request, value.imageFile)
+      : await this.categoryService.add(value.request, value.imageFile);
+
+    if (success) {
+      this.showDrawer.set(false);
+      this.editing.set(null);
+    }
   }
 
-  protected confirmDelete(): void {
-    const c = this.toDelete();
-    if (c) this.categoryService.remove(c.id);
-    this.toDelete.set(null);
+  protected async confirmDelete(): Promise<void> {
+    const category = this.toDelete();
+
+    if (!category) return;
+
+    const success = await this.categoryService.delete(category.id);
+
+    if (success) {
+      this.toDelete.set(null);
+    }
+  }
+
+  protected categoryServiceRetry(): void {
+    void this.categoryService.load();
   }
 }

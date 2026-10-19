@@ -90,9 +90,9 @@
           <th class="px-5 text-right font-medium">Actions</th>
         </tr>
       </thead>
-      <tbody>
+      <!-- <tbody>
         @for (p of paged(); track p.id) {
-          @let cat = category(p.categoryId);
+          @let cat = category(p);
           <tr
             class="h-[68px] border-t border-neutral-100 text-neutral-700 transition-colors hover:bg-orange-50/40"
           >
@@ -115,7 +115,7 @@
             </td>
             <td>
               <span class="rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-600">{{
-                cat?.name ?? '—'
+                " cat?.name ?? '—'"
               }}</span>
             </td>
             <td>
@@ -196,7 +196,7 @@
             </td>
           </tr>
         }
-      </tbody>
+      </tbody> -->
     </table>
   </div>
 

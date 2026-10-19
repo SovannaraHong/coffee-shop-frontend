@@ -9,3 +9,12 @@ export interface CategoryRequest {
   icon?: string;
   tone?: Tone;
 }
+
+export interface CategoryFormSubmit {
+  request: CategoryRequest;
+  imageFile: File | null;
+}
+export interface CategoryFormSubmit {
+  request: CategoryRequest;
+  imageFile: File | null;
+}

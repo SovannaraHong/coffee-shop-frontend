@@ -134,11 +134,21 @@
         </label>
       </form>
 
+      @if (error(); as message) {
+        <div
+          role="alert"
+          class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+        >
+          {{ message }}
+        </div>
+      }
+
       <!-- Footer -->
       <div class="flex gap-3 border-t border-neutral-200 px-8 py-4">
         <button
           type="button"
           class="h-[42px] flex-1 rounded-md border border-neutral-700 bg-white text-[15px] text-neutral-700 hover:bg-neutral-50"
+          [disabled]="saving()"
           (click)="closed.emit()"
         >
           Cancel
@@ -146,10 +156,15 @@
         <button
           type="submit"
           form="categoryForm"
+          [disabled]="saving() || form.invalid"
           class="h-[42px] flex-1 rounded-md bg-[#e95f37] text-[15px] text-white hover:bg-[#d4532e]"
         >
-          <i class="fa-solid fa-check mr-1.5 text-xs"></i
-          >{{ category() ? 'Save changes' : 'Add category' }}
+          @if (saving()) {
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i>
+          } @else {
+            <i class="fa-solid fa-check mr-1.5 text-xs"></i>
+            {{ category() ? 'Save changes' : 'Add category' }}
+          }
         </button>
       </div>
     </aside>
