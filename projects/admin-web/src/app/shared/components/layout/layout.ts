@@ -3,6 +3,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { NAV_SECTIONS } from '../../../core/models/nav-items';
 import { ClickOutside } from '../../directives/click-outside';
 import { Logo } from '../logo/logo';
+import { AuthService } from '../../../core/auth/auth-service';
 
 @Component({
   selector: 'app-layout',
@@ -11,6 +12,8 @@ import { Logo } from '../logo/logo';
 })
 export class Layout {
   private readonly router = inject(Router);
+
+  private readonly auth = inject(AuthService);
 
   protected readonly sections = NAV_SECTIONS;
 
@@ -28,7 +31,9 @@ export class Layout {
     role: 'Manager',
     avatar: 'assets/images/avatar/avatar-1.jpg',
   };
-
+  protected logout(): void {
+    this.auth.logout(); // clears tokens, ends the Keycloak session, goes to /login
+  }
   protected readonly notifications = [
     {
       icon: 'fa-bag-shopping',

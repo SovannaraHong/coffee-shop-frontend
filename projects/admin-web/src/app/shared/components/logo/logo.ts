@@ -19,8 +19,8 @@ import { Component, input } from '@angular/core';
       <!-- Brand name -->
       @if (!compact()) {
         <div class="flex flex-col leading-tight">
-          <span class="text-lg font-bold tracking-tight text-white">
-            Brewly<span class="text-primary">.</span>
+          <span class="text-lg font-bold tracking-tight text-black">
+            APSARA<span class="text-primary">.</span>
           </span>
 
           <span class="mt-0.5 text-[10px] font-medium uppercase tracking-[0.18em] text-neutral-500">

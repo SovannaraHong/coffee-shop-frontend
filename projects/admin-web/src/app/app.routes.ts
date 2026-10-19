@@ -1,27 +1,26 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/auth/guard/auth-guard';
 
 export const routes: Routes = [
   // ---- Public pages (no sidebar) ----
   {
     path: 'login',
-    title: 'Sign in · Brewly',
     loadComponent: () => import('./core/auth/login/login').then((m) => m.Login),
   },
   {
     path: 'register',
-    title: 'Create account · Brewly',
     loadComponent: () => import('./core/auth/register/register').then((m) => m.Register),
   },
 
-  // ---- Admin shell (sidebar + topbar) ----
+  // ---- Admin shell (sidebar + TopBar), requires login ----
   {
     path: '',
+    canActivate: [authGuard],
     loadComponent: () => import('./shared/components/layout/layout').then((m) => m.Layout),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
         path: 'dashboard',
-        title: 'Dashboard · Brewly',
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
       },
       {
