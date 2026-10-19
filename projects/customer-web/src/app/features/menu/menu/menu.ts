@@ -10,7 +10,7 @@ import { MenuPaginator } from '../../../shared/components/menu-paginator/menu-pa
 import { ProductResponse } from '../../../../../../../libs/models/product/product-response.model';
 import { CategoryResponse } from '../../../../../../../libs/models/category/category-response.model';
 import { ProductService } from '../../../../../../../libs/api/product/product.service';
-import { CategoryService } from '../../../../../../../libs/api/category/category.service';
+import { CategoryApiService } from '../../../../../../../libs/api/category/category.service';
 
 /** How many products to request per backend call */
 const FETCH_SIZE = 50;
@@ -28,26 +28,24 @@ const TRANSITION_MS = 300;
 })
 export class Menu {
   private readonly productApi = inject(ProductService);
-  private readonly categoryApi = inject(CategoryService);
+  private readonly categoryApi = inject(CategoryApiService);
   private readonly destroyRef = inject(DestroyRef);
   private fetchSub?: Subscription;
 
   readonly activeCategory = signal<string>(ALL_CATEGORY);
-  readonly favoriteIds    = signal<number[]>([]);
-  readonly currentPage    = signal(FIRST_PAGE);
+  readonly favoriteIds = signal<number[]>([]);
+  readonly currentPage = signal(FIRST_PAGE);
 
   /** Every active product fetched from the backend (all pages combined) */
-  readonly allProducts    = signal<ProductResponse[]>([]);
-  readonly isLoading      = signal(false);
-  readonly loadError      = signal(false);
+  readonly allProducts = signal<ProductResponse[]>([]);
+  readonly isLoading = signal(false);
+  readonly loadError = signal(false);
   /** True for TRANSITION_MS when switching tabs or pages — shows spinner briefly */
   readonly isTransitioning = signal(false);
 
   /* ── Categories for filter tabs ──────────────────────────────────────── */
   private readonly categoryList = toSignal(
-    this.categoryApi.getActiveCategories().pipe(
-      catchError(() => of<CategoryResponse[]>([])),
-    ),
+    this.categoryApi.getActiveCategories().pipe(catchError(() => of<CategoryResponse[]>([]))),
     { initialValue: [] as CategoryResponse[] },
   );
 
@@ -57,7 +55,7 @@ export class Menu {
 
   /** Products matching the active category tab */
   readonly filtered = computed(() => {
-    const all      = this.allProducts();
+    const all = this.allProducts();
     const category = this.activeCategory();
     if (category === ALL_CATEGORY) return all;
     return all.filter((p) => p.categoryName === category);
@@ -101,33 +99,37 @@ export class Menu {
     // Send both param styles so it works regardless of backend endpoint variant
     const query = (p: number) =>
       this.productApi.getProducts({
-        page: p, _page: p,
-        size: FETCH_SIZE, _limit: FETCH_SIZE,
+        page: p,
+        _page: p,
+        size: FETCH_SIZE,
+        _limit: FETCH_SIZE,
         isActive: true,
       });
 
-    this.fetchSub = query(FIRST_PAGE).pipe(
-      switchMap((first) => {
-        const total = first.paginationDTO?.totalPage ?? 1;
-        if (total <= 1) return of(first.list);
+    this.fetchSub = query(FIRST_PAGE)
+      .pipe(
+        switchMap((first) => {
+          const total = first.paginationDTO?.totalPage ?? 1;
+          if (total <= 1) return of(first.list);
 
-        // Fetch remaining pages in parallel
-        const rest = Array.from({ length: total - 1 }, (_, i) =>
-          query(FIRST_PAGE + 1 + i).pipe(map((r) => r.list)),
-        );
-        return forkJoin(rest).pipe(map((pages) => [...first.list, ...pages.flat()]));
-      }),
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe({
-      next: (products) => {
-        this.allProducts.set(products);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        this.loadError.set(true);
-        this.isLoading.set(false);
-      },
-    });
+          // Fetch remaining pages in parallel
+          const rest = Array.from({ length: total - 1 }, (_, i) =>
+            query(FIRST_PAGE + 1 + i).pipe(map((r) => r.list)),
+          );
+          return forkJoin(rest).pipe(map((pages) => [...first.list, ...pages.flat()]));
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (products) => {
+          this.allProducts.set(products);
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.loadError.set(true);
+          this.isLoading.set(false);
+        },
+      });
   }
 
   /* ── Public handlers ─────────────────────────────────────────────────── */

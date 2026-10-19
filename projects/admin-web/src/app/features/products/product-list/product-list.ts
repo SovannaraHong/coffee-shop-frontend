@@ -1,3 +1,4 @@
+import { CategoryApiService } from './../../../../../../../libs/api/category/category.service';
 import { CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Product } from '../../../core/models/product';
@@ -10,11 +11,12 @@ type Availability = 'all' | 'available' | 'unavailable';
 
 @Component({
   selector: 'app-product-list',
-  imports: [CurrencyPipe, ConfirmDialog, ProductDrawer],
+  imports: [ConfirmDialog, ProductDrawer],
   templateUrl: './product-list.html',
 })
 export class ProductList {
   private readonly productService = inject(ProductService);
+  private readonly categoryApiService = inject(CategoryApiService);
   private readonly categoryService = inject(CategoryService);
 
   protected readonly categories = this.categoryService.items;
@@ -72,7 +74,7 @@ export class ProductList {
   }
 
   protected category(id: number) {
-    return this.categoryService.getById(id);
+    return this.categoryApiService.getCategoryById(id);
   }
   protected margin(p: Product): number {
     return p.price ? Math.round(((p.price - p.cost) / p.price) * 100) : 0;
