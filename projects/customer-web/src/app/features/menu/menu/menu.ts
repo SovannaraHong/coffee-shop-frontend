@@ -9,8 +9,9 @@ import { PromoCarousel } from '../../../shared/components/promo-carousel/promo-c
 import { MenuPaginator } from '../../../shared/components/menu-paginator/menu-paginator';
 import { ProductResponse } from '../../../../../../../libs/models/product/product-response.model';
 import { CategoryResponse } from '../../../../../../../libs/models/category/category-response.model';
-import { ProductService } from '../../../../../../../libs/api/product/product.service';
+
 import { CategoryApiService } from '../../../../../../../libs/api/category/category.service';
+import { ProductApiService } from '../../../../../../../libs/api/product/product.service';
 
 /** How many products to request per backend call */
 const FETCH_SIZE = 50;
@@ -27,7 +28,7 @@ const TRANSITION_MS = 300;
   templateUrl: './menu.html',
 })
 export class Menu {
-  private readonly productApi = inject(ProductService);
+  private readonly productApi = inject(ProductApiService);
   private readonly categoryApi = inject(CategoryApiService);
   private readonly destroyRef = inject(DestroyRef);
   private fetchSub?: Subscription;

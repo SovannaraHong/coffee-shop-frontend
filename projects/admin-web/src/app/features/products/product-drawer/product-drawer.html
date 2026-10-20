@@ -3,11 +3,12 @@
     <!-- Backdrop -->
     <div
       class="absolute inset-0 bg-neutral-900/40 backdrop-blur-[2px] transition-opacity duration-300"
-      [class]="shown() ? 'opacity-100' : 'opacity-0'"
-      (click)="closed.emit()"
+      [class.opacity-100]="shown()"
+      [class.opacity-0]="!shown()"
+      (click)="requestClose()"
     ></div>
 
-    <!-- Panel: pinned right, slides in from right to left -->
+    <!-- Drawer -->
     <aside
       class="absolute right-0 top-0 flex h-full flex-col bg-white shadow-2xl"
       style="
@@ -34,55 +35,90 @@
             Menu item details, variants and availability
           </p>
         </div>
+
         <button
           type="button"
-          class="grid size-9 place-items-center rounded-lg bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200"
           aria-label="Close"
-          (click)="closed.emit()"
+          class="grid size-9 place-items-center rounded-lg bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200 disabled:opacity-50"
+          [disabled]="saving()"
+          (click)="requestClose()"
         >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <!-- Body -->
+      <!-- Form Body -->
       <form
+        id="productForm"
         [formGroup]="form"
         (ngSubmit)="submit()"
         novalidate
-        id="productForm"
         class="flex-1 space-y-6 overflow-y-auto px-8 py-6"
       >
-        <!-- Image -->
+        <!-- Errors (server or local) -->
+        @if (error() || formError()) {
+          <div
+            class="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+            <span>{{ error() || formError() }}</span>
+          </div>
+        }
+
+        <!-- Product Image -->
         <div>
           <span class="mb-1.5 block text-sm font-medium text-neutral-700">Product image</span>
+
           <label
             class="flex cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed border-neutral-300 p-3 transition-colors hover:border-[#e95f37] hover:bg-orange-50/40"
           >
             <span
               class="grid size-20 shrink-0 place-items-center overflow-hidden rounded-lg bg-neutral-100 text-2xl text-neutral-300"
             >
-              @if (imagePreview) {
-                <img [src]="imagePreview" alt="Preview" class="size-full object-cover" />
+              @if (imagePreview()) {
+                <img
+                  [src]="imagePreview()"
+                  alt="Product image preview"
+                  class="size-full object-cover"
+                />
               } @else {
                 <i class="fa-regular fa-image"></i>
               }
             </span>
-            <span class="text-sm text-neutral-500">
-              <span class="block font-medium text-neutral-800">{{
-                imagePreview ? 'Click to change image' : 'Click to upload an image'
-              }}</span>
-              <span class="text-xs text-neutral-400">PNG or JPG, up to 2 MB</span>
+
+            <span class="min-w-0 flex-1 text-sm text-neutral-500">
+              <span class="block font-medium text-neutral-800">
+                {{ imagePreview() ? 'Click to change image' : 'Click to upload an image' }}
+              </span>
+              <span class="text-xs text-neutral-400">PNG, JPG or WebP, up to 2 MB</span>
             </span>
-            <input type="file" accept="image/*" class="sr-only" (change)="onImage($event)" />
+
+            @if (imagePreview()) {
+              <button
+                type="button"
+                class="rounded-md px-2.5 py-1.5 text-xs font-medium text-red-500 transition hover:bg-red-50"
+                (click)="removeImage($event)"
+              >
+                Remove
+              </button>
+            }
+
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              class="sr-only"
+              (change)="onImage($event)"
+            />
           </label>
         </div>
 
-        <!-- Name + category -->
+        <!-- Name and Category -->
         <div class="grid gap-4 sm:grid-cols-3">
           <div class="sm:col-span-2">
-            <label for="p-name" class="mb-1.5 block text-sm font-medium text-neutral-700"
-              >Name</label
-            >
+            <label for="p-name" class="mb-1.5 block text-sm font-medium text-neutral-700">
+              Name
+            </label>
             <input
               id="p-name"
               formControlName="name"
@@ -93,16 +129,17 @@
               <p class="mt-1 text-xs text-red-500">Name is required.</p>
             }
           </div>
+
           <div>
-            <label for="p-cat" class="mb-1.5 block text-sm font-medium text-neutral-700"
-              >Category</label
-            >
+            <label for="p-cat" class="mb-1.5 block text-sm font-medium text-neutral-700">
+              Category
+            </label>
             <select
               id="p-cat"
               formControlName="categoryId"
               class="h-[42px] w-full rounded-md border border-neutral-200 bg-white px-3 text-[15px] outline-none focus:border-[#e95f37]"
             >
-              <option [ngValue]="0" disabled>Select category</option>
+              <option [ngValue]="null" disabled>Select category</option>
               @for (c of categories(); track c.id) {
                 <option [ngValue]="c.id">{{ c.name }}</option>
               }
@@ -115,9 +152,9 @@
 
         <!-- Description -->
         <div>
-          <label for="p-desc" class="mb-1.5 block text-sm font-medium text-neutral-700"
-            >Description</label
-          >
+          <label for="p-desc" class="mb-1.5 block text-sm font-medium text-neutral-700">
+            Description
+          </label>
           <textarea
             id="p-desc"
             rows="3"
@@ -136,16 +173,18 @@
               class="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-[#e95f37] transition hover:bg-orange-100"
               (click)="addVariant()"
             >
-              <i class="fa-solid fa-plus text-[10px]"></i> Add variant
+              <i class="fa-solid fa-plus text-[10px]"></i>
+              Add variant
             </button>
           </div>
+
           <div formArrayName="variants" class="space-y-3">
             @for (v of variants.controls; track $index; let i = $index) {
               <div
                 [formGroupName]="i"
                 class="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3"
               >
-                <div class="grid grid-cols-[1.2fr_120px_1.2fr_auto] items-end gap-3">
+                <div class="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1.2fr_120px_1.2fr_auto]">
                   <div>
                     <label class="mb-1 block text-xs text-neutral-500">Name</label>
                     <input
@@ -154,16 +193,18 @@
                       class="h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-[#e95f37]"
                     />
                   </div>
+
                   <div>
                     <label class="mb-1 block text-xs text-neutral-500">Price ($)</label>
                     <input
                       type="number"
                       step="0.01"
-                      min="0"
+                      min="0.01"
                       formControlName="price"
                       class="h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-[#e95f37]"
                     />
                   </div>
+
                   <div>
                     <label class="mb-1 block text-xs text-neutral-500">SKU</label>
                     <input
@@ -172,6 +213,7 @@
                       class="h-10 w-full rounded-md border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-[#e95f37]"
                     />
                   </div>
+
                   <button
                     type="button"
                     aria-label="Remove variant"
@@ -182,8 +224,9 @@
                     <i class="fa-regular fa-trash-can text-sm"></i>
                   </button>
                 </div>
+
                 @if (v.touched && v.invalid) {
-                  <p class="mt-2 text-xs text-red-500">Name, price and SKU are required.</p>
+                  <p class="mt-2 text-xs text-red-500">Check the variant name, price and SKU.</p>
                 }
               </div>
             }
@@ -193,26 +236,43 @@
         <!-- Add-ons -->
         <div>
           <span class="mb-2 block text-sm font-medium text-neutral-700">Add-ons</span>
-          <div class="flex flex-wrap gap-2">
-            @for (a of addons; track a.id) {
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-colors"
-                [class]="
-                  hasAddon(a.id)
-                    ? 'border-[#e95f37] bg-orange-50 text-[#e95f37]'
-                    : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                "
-                (click)="toggleAddon(a.id)"
-              >
-                <i class="fa-solid text-xs" [class]="hasAddon(a.id) ? 'fa-check' : a.icon"></i
-                >{{ a.name }}
+
+          @if (addonsLoading()) {
+            <p class="text-xs text-neutral-400">
+              <i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading add-ons…
+            </p>
+          } @else if (addonsError()) {
+            <p class="text-xs text-red-500">
+              {{ addonsError() }}
+              <button type="button" class="font-medium underline" (click)="loadAddons()">
+                Retry
               </button>
-            }
-          </div>
+            </p>
+          } @else if (addons().length === 0) {
+            <p class="text-xs text-neutral-400">No active add-ons yet.</p>
+          } @else {
+            <div class="flex flex-wrap gap-2">
+              @for (a of addons(); track a.id) {
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-colors"
+                  [class]="
+                    hasAddon(a.id)
+                      ? 'border-[#e95f37] bg-orange-50 text-[#e95f37]'
+                      : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                  "
+                  [attr.aria-pressed]="hasAddon(a.id)"
+                  (click)="toggleAddon(a.id)"
+                >
+                  <i class="fa-solid text-xs" [class]="hasAddon(a.id) ? 'fa-check' : a.icon"></i>
+                  {{ a.name }}
+                </button>
+              }
+            </div>
+          }
         </div>
 
-        <!-- Switches -->
+        <!-- Status Switches -->
         <div class="grid gap-4 sm:grid-cols-2">
           <label
             class="flex cursor-pointer items-center justify-between rounded-xl border border-neutral-200 px-4 py-3.5"
@@ -226,6 +286,7 @@
               class="relative h-6 w-11 shrink-0 rounded-full bg-neutral-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-[#e95f37] peer-checked:after:translate-x-5"
             ></span>
           </label>
+
           <label
             class="flex cursor-pointer items-center justify-between rounded-xl border border-neutral-200 px-4 py-3.5"
           >
@@ -245,18 +306,26 @@
       <div class="flex gap-3 border-t border-neutral-200 px-8 py-4">
         <button
           type="button"
-          class="h-[42px] flex-1 rounded-md border border-neutral-700 bg-white text-[15px] text-neutral-700 hover:bg-neutral-50"
-          (click)="closed.emit()"
+          class="h-[42px] flex-1 rounded-md border border-neutral-700 bg-white text-[15px] text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="saving()"
+          (click)="requestClose()"
         >
           Cancel
         </button>
+
         <button
           type="submit"
           form="productForm"
-          class="h-[42px] flex-1 rounded-md bg-[#e95f37] text-[15px] text-white hover:bg-[#d4532e]"
+          [disabled]="saving()"
+          class="h-[42px] flex-1 rounded-md bg-[#e95f37] text-[15px] text-white hover:bg-[#d4532e] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <i class="fa-solid fa-check mr-1.5 text-xs"></i
-          >{{ product() ? 'Save changes' : 'Add product' }}
+          @if (saving()) {
+            <i class="fa-solid fa-spinner fa-spin mr-1.5 text-xs"></i>
+            Saving...
+          } @else {
+            <i class="fa-solid fa-check mr-1.5 text-xs"></i>
+            {{ product() ? 'Save changes' : 'Add product' }}
+          }
         </button>
       </div>
     </aside>

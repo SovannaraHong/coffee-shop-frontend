@@ -4,4 +4,5 @@ export interface AddonResponse {
   price: number;
   isActive: boolean;
   createdAt: string;
+  icon?: string;
 }

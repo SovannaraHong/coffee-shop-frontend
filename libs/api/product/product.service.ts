@@ -1,7 +1,7 @@
+import { ApiClient } from './../api-client';
 import { ProductRequest } from '../../models/product/product-request.model';
 import { ProductPaginationParams } from '../../models/product/product.model';
 import { PageResponse } from '../../models/common/page-response.model';
-import { ApiClient } from '../api-client';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { API_URL } from '../api-config';
@@ -11,7 +11,7 @@ import { ProductResponse } from '../../models/product/product-response.model';
 @Injectable({
   providedIn: 'root',
 })
-export class ProductService {
+export class ProductApiService {
   private readonly apiClient = inject(ApiClient);
   private readonly apiUrl = inject(API_URL);
 
@@ -39,6 +39,9 @@ export class ProductService {
   }
   changeProductStatus(id: number): Observable<ProductResponse> {
     return this.apiClient.patch<ProductResponse>(`${this.endpoint}/${id}/status`, {});
+  }
+  changeProductFeature(id: number): Observable<ProductResponse> {
+    return this.apiClient.patch<ProductResponse>(`${this.endpoint}/${id}/feature`, {});
   }
   getProductsByCategory(categoryId: number): Observable<ProductResponse[]> {
     return this.apiClient.get<ProductResponse[]>(`${this.endpoint}/${categoryId}/category`);

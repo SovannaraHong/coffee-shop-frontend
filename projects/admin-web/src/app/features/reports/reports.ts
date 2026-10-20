@@ -1,18 +1,19 @@
+import { ProductApiService } from './../../../../../../libs/api/product/product.service';
 import { CurrencyPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { TOP_SELLING } from '../../core/data/mock-data';
 import { InventoryService } from '../../core/services/inventory-service';
-import { ProductService } from '../../core/services/product-service';
+
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { AreaChart } from '../../shared/components/charts/area-chart/area-chart';
 
 @Component({
   selector: 'app-reports',
-  imports: [CurrencyPipe, PageHeader, AreaChart],
+  imports: [PageHeader, AreaChart],
   templateUrl: './reports.html',
 })
 export class Reports {
-  private readonly products = inject(ProductService);
+  private readonly products = inject(ProductApiService);
   private readonly inventory = inject(InventoryService);
 
   protected readonly months = [
@@ -49,12 +50,12 @@ export class Reports {
   protected readonly lowStockCount = computed(() => this.inventory.lowStock().length);
   protected readonly outOfStockCount = computed(() => this.inventory.outOfStock().length);
 
-  protected readonly topProducts = computed(() =>
-    TOP_SELLING.map((t) => {
-      const p = this.products.getById(t.productId);
-      return { name: p?.name ?? 'Unknown', units: t.units, revenue: t.units * (p?.price ?? 0) };
-    }),
-  );
+  // protected readonly topProducts = computed(() =>
+  //   TOP_SELLING.map((t) => {
+  //     const p = this.products.getById(t.productId);
+  //     return { name: p?.name ?? 'Unknown', units: t.units, revenue: t.units * (p?.price ?? 0) };
+  //   }),
+  // );
 
   protected randomize(): void {
     const rnd = () => Math.round((35000 + Math.random() * 65000) / 1000) * 1000;

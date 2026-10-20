@@ -81,124 +81,295 @@
       <thead>
         <tr class="h-[42px] bg-[#f7f7f7] text-xs uppercase tracking-wide text-neutral-500">
           <th class="px-5 font-medium">Product</th>
-          <th class="font-medium">Category</th>
-          <th class="font-medium">Sizes</th>
-          <th class="font-medium">Cost</th>
-          <th class="font-medium">Price</th>
-          <th class="font-medium">Margin</th>
-          <th class="font-medium">Status</th>
-          <th class="px-5 text-right font-medium">Actions</th>
+          <th class="px-5 font-medium">Category</th>
+          <th class="px-5 font-medium">Sizes</th>
+          <th class="px-5 font-medium">Price</th>
+          <th class="px-5 font-medium">Feature</th>
+          <th class="px-5 font-medium">Status</th>
+          <th class="px-5 text-center font-medium">Actions</th>
         </tr>
       </thead>
-      <!-- <tbody>
+
+      <tbody class="divide-y divide-neutral-100">
         @for (p of paged(); track p.id) {
-          @let cat = category(p);
-          <tr
-            class="h-[68px] border-t border-neutral-100 text-neutral-700 transition-colors hover:bg-orange-50/40"
-          >
-            <td class="px-5">
+          <tr class="h-[76px] transition-colors hover:bg-[#faf8f5]">
+            <!-- Product -->
+            <td class="px-5 py-3">
               <div class="flex items-center gap-3">
-                <span
-                  class="grid size-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-orange-100 text-[#e95f37]"
-                >
-                  @if (p.imageUrl) {
-                    <img [src]="p.imageUrl" alt="" class="size-full object-cover" />
-                  } @else {
+                @if (p.imageUrl) {
+                  <img
+                    [src]="p.imageUrl"
+                    [alt]="p.name"
+                    class="h-11 w-11 rounded-lg border border-neutral-200 object-cover"
+                  />
+                } @else {
+                  <div
+                    class="flex h-11 w-11 items-center justify-center rounded-lg bg-[#f3e9df] text-[#6b422d]"
+                  >
                     <i class="fa-solid fa-mug-hot"></i>
-                  }
-                </span>
-                <div>
-                  <p class="font-medium text-neutral-900">{{ p.name }}</p>
-                  <p class="text-xs text-neutral-400">{{ p.sku }}</p>
+                  </div>
+                }
+
+                <div class="min-w-0">
+                  <p class="truncate font-semibold text-[#2b1d14]">
+                    {{ p.name }}
+                  </p>
+                  <p class="mt-1 text-xs text-neutral-400">ID: {{ p.id }}</p>
                 </div>
               </div>
             </td>
-            <td>
-              <span class="rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-600">{{
-                " cat?.name ?? '—'"
-              }}</span>
-            </td>
-            <td>
-              @if (p.sizes.length) {
-                <div class="flex gap-1">
-                  @for (s of p.sizes; track s) {
-                    <span
-                      class="grid size-6 place-items-center rounded-md bg-neutral-100 text-[11px] font-medium text-neutral-600"
-                      >{{ s }}</span
-                    >
-                  }
-                </div>
-              } @else {
-                <span class="text-neutral-400">—</span>
-              }
-            </td>
-            <td class="text-neutral-500">{{ p.cost | currency }}</td>
-            <td class="font-semibold text-neutral-900">{{ p.price | currency }}</td>
-            <td>
+
+            <!-- Category -->
+            <td class="px-5 py-3">
               <span
-                class="rounded-full px-2.5 py-1 text-xs font-medium"
-                [class]="
-                  margin(p) >= 50
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : margin(p) >= 25
-                      ? 'bg-amber-50 text-amber-700'
-                      : 'bg-red-50 text-red-600'
-                "
-                >{{ margin(p) }}%</span
+                class="inline-flex rounded-full bg-[#f3e9df] px-3 py-1 text-xs font-medium text-[#6b422d]"
               >
+                {{ p.categoryName || 'Uncategorized' }}
+              </span>
             </td>
-            <td>
+
+            <!-- Sizes (sorted so the order never changes) -->
+            <td class="px-5 py-3">
+              <div class="flex flex-wrap gap-1">
+                @for (variant of sortedVariants(p); track variant.id) {
+                  <span
+                    class="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-600"
+                  >
+                    {{ variant.name }}
+                  </span>
+                } @empty {
+                  <span class="text-xs text-neutral-400">No sizes</span>
+                }
+              </div>
+            </td>
+
+            <!-- Price (cheapest variant) -->
+            <td class="px-5 py-3">
+              <span class="font-semibold text-[#2b1d14]">
+                {{ firstVariantPrice(p) | currency }}
+              </span>
+            </td>
+
+            <!-- Feature toggle -->
+            <td class="px-5 py-3">
               <label class="inline-flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   class="peer sr-only"
-                  [checked]="p.available"
-                  [attr.aria-label]="'Toggle ' + p.name"
-                  (change)="setAvailable(p, $any($event.target).checked)"
+                  [checked]="p.featured"
+                  [disabled]="saving()"
+                  [attr.aria-label]="'Feature ' + p.name"
+                  (change)="setFeature(p, $any($event.target).checked)"
                 />
+
                 <span
-                  class="relative h-5 w-9 rounded-full bg-neutral-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:size-4 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-[#e95f37] peer-checked:after:translate-x-4"
+                  class="relative h-5 w-9 rounded-full bg-neutral-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:bg-[#e95f37] peer-checked:after:translate-x-4 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#e95f37] peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
                 ></span>
+
                 <span
-                  class="text-xs"
-                  [class]="p.available ? 'text-emerald-700' : 'text-neutral-400'"
-                  >{{ p.available ? 'Available' : 'Hidden' }}</span
+                  class="text-xs font-medium"
+                  [class.text-[#e95f37]]="p.featured"
+                  [class.text-neutral-400]="!p.featured"
                 >
+                  {{ p.featured ? 'Featured' : 'No' }}
+                </span>
               </label>
             </td>
-            <td class="px-5 text-right">
-              <button
-                type="button"
-                aria-label="Edit"
-                class="inline-grid size-9 place-items-center rounded-lg bg-neutral-100 text-neutral-600 transition hover:bg-[#e95f37] hover:text-white"
-                (click)="openEdit(p)"
-              >
-                <i class="fa-regular fa-pen-to-square text-sm"></i>
-              </button>
-              <button
-                type="button"
-                aria-label="Delete"
-                class="ml-1 inline-grid size-9 place-items-center rounded-lg bg-red-50 text-red-500 transition hover:bg-red-500 hover:text-white"
-                (click)="toDelete.set(p)"
-              >
-                <i class="fa-regular fa-trash-can text-sm"></i>
-              </button>
+
+            <!-- Availability toggle -->
+            <td class="px-5 py-3">
+              <label class="inline-flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  class="peer sr-only"
+                  [checked]="p.isActive"
+                  [disabled]="saving()"
+                  [attr.aria-label]="'Set availability for ' + p.name"
+                  (change)="setAvailable(p, $any($event.target).checked)"
+                />
+
+                <span
+                  class="relative h-5 w-9 rounded-full bg-neutral-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:bg-emerald-500 peer-checked:after:translate-x-4 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-500 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+                ></span>
+
+                <span
+                  class="text-xs font-medium"
+                  [class.text-emerald-700]="p.isActive"
+                  [class.text-neutral-400]="!p.isActive"
+                >
+                  {{ p.isActive ? 'Available' : 'Hidden' }}
+                </span>
+              </label>
+            </td>
+
+            <!-- Actions: View, Edit, Delete -->
+            <td class="px-5 py-3">
+              <div class="flex items-center justify-center gap-1">
+                <!-- View -->
+                <button
+                  type="button"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-[#f3e9df] hover:text-[#6b422d]"
+                  title="View product"
+                  [attr.aria-label]="'View ' + p.name"
+                  (click)="viewProduct(p)"
+                >
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+
+                <!-- Edit -->
+                <button
+                  type="button"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-blue-50 hover:text-blue-600"
+                  title="Edit product"
+                  [attr.aria-label]="'Edit ' + p.name"
+                  (click)="openEdit(p)"
+                >
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+
+                <!-- Delete -->
+                <button
+                  type="button"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-red-50 hover:text-red-600"
+                  title="Delete product"
+                  [attr.aria-label]="'Delete ' + p.name"
+                  [disabled]="saving()"
+                  (click)="toDelete.set(p)"
+                >
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+              </div>
             </td>
           </tr>
         } @empty {
           <tr>
-            <td colspan="8" class="py-16 text-center text-neutral-400">
-              <span
-                class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-neutral-100 text-2xl"
-                ><i class="fa-solid fa-mug-hot"></i
-              ></span>
-              No products found
+            <td colspan="7" class="px-5 py-12 text-center">
+              <div class="flex flex-col items-center gap-2">
+                <i class="fa-solid fa-mug-hot text-3xl text-neutral-300"></i>
+                <p class="font-medium text-neutral-600">No products found</p>
+                <p class="text-sm text-neutral-400">Try changing your search or filters.</p>
+              </div>
             </td>
           </tr>
         }
-      </tbody> -->
+      </tbody>
     </table>
   </div>
+
+  <!-- Product details modal -->
+  @if (selectedProduct(); as product) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      (click)="closeProductView()"
+    >
+      <section
+        class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-view-title"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
+          <div>
+            <h2 id="product-view-title" class="text-lg font-semibold text-[#2b1d14]">
+              Product details
+            </h2>
+            <p class="mt-1 text-xs text-neutral-400">Product ID: {{ product.id }}</p>
+          </div>
+
+          <button
+            type="button"
+            class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
+            aria-label="Close product details"
+            (click)="closeProductView()"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="space-y-5 p-6">
+          @if (product.imageUrl) {
+            <img
+              [src]="product.imageUrl"
+              [alt]="product.name"
+              class="h-48 w-full rounded-xl object-cover"
+            />
+          }
+
+          <div>
+            <h3 class="text-xl font-semibold text-[#2b1d14]">
+              {{ product.name }}
+            </h3>
+            <p class="mt-2 text-sm text-neutral-500">
+              {{ product.description || 'No description available.' }}
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-xl bg-[#faf8f5] p-4">
+              <p class="text-xs text-neutral-500">Category</p>
+              <p class="mt-1 font-medium text-[#2b1d14]">
+                {{ product.categoryName || 'Uncategorized' }}
+              </p>
+            </div>
+
+            <div class="rounded-xl bg-[#faf8f5] p-4">
+              <p class="text-xs text-neutral-500">Starting price</p>
+              <p class="mt-1 font-semibold text-[#2b1d14]">
+                {{ firstVariantPrice(product) | currency }}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <p class="mb-2 text-sm font-semibold text-[#2b1d14]">Variants / Sizes</p>
+            <div class="space-y-2">
+              @for (variant of sortedVariants(product); track variant.id) {
+                <div
+                  class="flex items-center justify-between rounded-lg border border-neutral-100 px-4 py-3"
+                >
+                  <span class="text-sm text-neutral-700">{{ variant.name }}</span>
+                  <span class="font-semibold text-[#6b422d]">
+                    {{ variant.price | currency }}
+                  </span>
+                </div>
+              } @empty {
+                <p class="text-sm text-neutral-400">No variants available.</p>
+              }
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <span
+              class="rounded-full px-3 py-1 text-xs font-medium"
+              [class.bg-emerald-50]="product.isActive"
+              [class.text-emerald-700]="product.isActive"
+              [class.bg-neutral-100]="!product.isActive"
+              [class.text-neutral-500]="!product.isActive"
+            >
+              {{ product.isActive ? 'Available' : 'Hidden' }}
+            </span>
+
+            @if (product.featured) {
+              <span class="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700">
+                Featured
+              </span>
+            }
+          </div>
+        </div>
+
+        <div class="flex justify-end border-t border-neutral-100 px-6 py-4">
+          <button
+            type="button"
+            class="rounded-lg bg-[#3f2a1d] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#2b1d14]"
+            (click)="closeProductView()"
+          >
+            Close
+          </button>
+        </div>
+      </section>
+    </div>
+  }
 
   <!-- Footer / pagination -->
   <div class="flex items-center justify-between border-t border-neutral-200 px-5 py-3">
@@ -244,10 +415,11 @@
   [open]="showDrawer()"
   [product]="editing()"
   [categories]="categories()"
-  (closed)="showDrawer.set(false)"
+  [saving]="saving()"
+  [error]="saveError()"
+  (closed)="closeDrawer()"
   (saved)="onSaved($event)"
 />
-
 <app-confirm-dialog
   [open]="!!toDelete()"
   title="Delete product"
