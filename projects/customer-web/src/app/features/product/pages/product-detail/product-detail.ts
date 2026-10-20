@@ -3,7 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map, switchMap } from 'rxjs';
 import { CartItem } from '../../../../../../../../libs/models/cart/cart-item.model';
-import { ProductService } from '../../../../../../../../libs/api/product/product.service';
+import { ProductApiService } from '../../../../../../../../libs/api/product/product.service';
 import { CartService } from '../../../../../../../../libs/services/cart/cart.service';
 
 @Component({
@@ -14,7 +14,7 @@ import { CartService } from '../../../../../../../../libs/services/cart/cart.ser
 })
 export class ProductDetail {
   private readonly route = inject(ActivatedRoute);
-  private readonly productService = inject(ProductService);
+  private readonly productService = inject(ProductApiService);
   private readonly cart = inject(CartService);
 
   readonly product = toSignal(

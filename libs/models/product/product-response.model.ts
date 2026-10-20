@@ -5,7 +5,7 @@ export interface ProductResponse {
   id: number;
   name: string;
   description?: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   isActive: boolean;
   featured: boolean;
   categoryId: number;
