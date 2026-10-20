@@ -296,7 +296,7 @@ export class Checkout implements OnInit {
     this.placingOrder.set(true);
     this.errorMessage.set(null);
 
-    this.orders.create(request).subscribe({
+    this.orders.createOrder(request).subscribe({
       next: (order) => {
         this.cart.saveItemsForOrder(order.id, cartItems);
         this.pendingOrderId.set(order.id);

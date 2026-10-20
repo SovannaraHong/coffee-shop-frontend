@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+
 import { NAV_SECTIONS } from '../../../core/models/nav-items';
 import { ClickOutside } from '../../directives/click-outside';
 import { Logo } from '../logo/logo';
@@ -12,28 +13,34 @@ import { AuthService } from '../../../core/auth/auth-service';
 })
 export class Layout {
   private readonly router = inject(Router);
-
   private readonly auth = inject(AuthService);
 
   protected readonly sections = NAV_SECTIONS;
 
-  protected readonly collapsed = signal(false); // desktop: icon-only sidebar
-  protected readonly mobileOpen = signal(false); // mobile: drawer
+  protected readonly collapsed = signal(false);
+  protected readonly mobileOpen = signal(false);
   protected readonly notifOpen = signal(false);
   protected readonly userOpen = signal(false);
 
-  /** Labels of the nav groups that are currently expanded */
   protected readonly openGroups = signal<string[]>(this.initialOpenGroups());
 
-  // TODO: replace with the real logged-in user (AuthService.user()) once Keycloak is wired
-  protected readonly user = {
-    name: 'Alex Morgan',
-    role: 'Manager',
-    avatar: 'assets/images/avatar/avatar-1.jpg',
-  };
+  // Get the logged-in user from AuthService.
+  protected readonly user = computed(() => {
+    const authUser = this.auth.user();
+
+    return {
+      name: authUser?.fullName?.trim() || authUser?.email || 'User',
+
+      role: authUser?.roleName || 'Staff',
+
+      avatar: authUser?.avatarUrl?.trim() || 'assets/images/avatar/avatar-1.jpg',
+    };
+  });
+
   protected logout(): void {
-    this.auth.logout(); // clears tokens, ends the Keycloak session, goes to /login
+    this.auth.logout();
   }
+
   protected readonly notifications = [
     {
       icon: 'fa-bag-shopping',
@@ -63,13 +70,17 @@ export class Layout {
       (this.collapsed() ? 'w-64 lg:w-[68px] ' : 'w-64 ') +
       (this.mobileOpen() ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'),
   );
+
   protected readonly topbarClass = computed(() =>
     this.collapsed() ? 'lg:left-[68px]' : 'lg:left-64',
   );
+
   protected readonly contentClass = computed(() =>
     this.collapsed() ? 'lg:ml-[68px]' : 'lg:ml-64',
   );
+
   protected readonly hideWhenCollapsed = computed(() => (this.collapsed() ? 'lg:hidden' : ''));
+
   protected readonly linkClass = computed(() =>
     this.collapsed() ? 'lg:justify-center lg:px-0' : '',
   );
@@ -79,22 +90,26 @@ export class Layout {
   }
 
   protected toggleGroup(label: string): void {
-    // In icon-only mode, clicking a group widens the sidebar and opens it
     if (this.collapsed()) {
       this.collapsed.set(false);
-      if (!this.isOpen(label)) this.openGroups.update((g) => [...g, label]);
+
+      if (!this.isOpen(label)) {
+        this.openGroups.update((groups) => [...groups, label]);
+      }
+
       return;
     }
-    this.openGroups.update((g) =>
-      g.includes(label) ? g.filter((x) => x !== label) : [...g, label],
+
+    this.openGroups.update((groups) =>
+      groups.includes(label) ? groups.filter((item) => item !== label) : [...groups, label],
     );
   }
 
-  /** Open the group that contains the current page on first load */
   private initialOpenGroups(): string[] {
     const url = this.router.url;
+
     return NAV_SECTIONS.flat()
-      .filter((i) => i.children?.some((c) => url.startsWith(c.route)))
-      .map((i) => i.label);
+      .filter((item) => item.children?.some((child) => url.startsWith(child.route)))
+      .map((item) => item.label);
   }
 }

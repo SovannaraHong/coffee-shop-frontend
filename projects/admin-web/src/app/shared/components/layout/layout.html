@@ -200,17 +200,27 @@
         class="flex items-center gap-2 rounded-full p-0.5 hover:bg-neutral-100"
         (click)="userOpen.set(!userOpen()); notifOpen.set(false)"
       >
-        <img [src]="user.avatar" alt="" class="size-9 rounded-full object-cover" />
+        <img [src]="user().avatar" alt="" class="size-9 rounded-full object-cover" />
       </button>
       @if (userOpen()) {
         <div
           class="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg"
         >
           <div class="flex items-center gap-3 border-b border-neutral-100 px-4 py-3">
-            <img [src]="user.avatar" alt="" class="size-10 rounded-full object-cover" />
-            <div class="text-sm">
-              <p class="font-medium text-neutral-900">{{ user.name }}</p>
-              <p class="text-neutral-500">{{ user.role }}</p>
+            <img
+              [src]="user().avatar"
+              [alt]="user().name"
+              class="size-10 rounded-full object-cover"
+            />
+
+            <div class="min-w-0 text-sm">
+              <p class="truncate font-medium text-neutral-900">
+                {{ user().name }}
+              </p>
+
+              <p class="text-neutral-500">
+                {{ user().role }}
+              </p>
             </div>
           </div>
           <div class="flex flex-col p-2 text-sm">

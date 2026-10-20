@@ -1,0 +1,283 @@
+@if (order(); as o) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+    (click)="close()"
+  >
+    <section
+      class="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="order-modal-title"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Header -->
+      <div class="flex items-center justify-between gap-3 border-b border-neutral-100 px-6 py-4">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-3">
+            <h2 id="order-modal-title" class="text-lg font-semibold text-[#2b1d14]">
+              {{ o.orderNumber }}
+            </h2>
+            <app-order-status-badge [status]="o.status" />
+            @if (late()) {
+              <span class="inline-flex items-center gap-1 text-xs font-medium text-red-500">
+                <i class="fa-solid fa-triangle-exclamation"></i> Waiting {{ timeAgo(o.orderDate) }}
+              </span>
+            }
+          </div>
+          <p class="mt-1 text-xs text-neutral-400">
+            Placed {{ o.orderDate | date: 'MMM d, y, h:mm a' }} · Order ID: {{ o.id }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
+          aria-label="Close order details"
+          (click)="close()"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="space-y-6 overflow-y-auto p-6">
+        @if (error()) {
+          <div
+            class="flex items-center gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            <i class="fa-solid fa-circle-exclamation"></i>
+            Could not update the order. It was refreshed, please check its status and try again.
+          </div>
+        }
+
+        <app-order-timeline [order]="o" />
+
+        @if (o.note) {
+          <div class="flex gap-2.5 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <i class="fa-regular fa-note-sticky mt-0.5"></i>
+            <div>
+              <p class="font-medium">Customer note</p>
+              <p class="mt-0.5">{{ o.note }}</p>
+            </div>
+          </div>
+        }
+
+        <div class="grid gap-6 md:grid-cols-5">
+          <!-- Items + totals -->
+          <div class="md:col-span-3">
+            <p class="mb-2 text-sm font-semibold text-[#2b1d14]">Items</p>
+
+            <ul class="divide-y divide-neutral-100 rounded-xl border border-neutral-100">
+              @for (d of o.details; track d.id) {
+                <li class="flex items-start justify-between gap-3 px-4 py-3">
+                  <div class="flex min-w-0 items-start gap-3">
+                    @if (d.imageUrl) {
+                      <img
+                        [src]="d.imageUrl"
+                        [alt]="d.productName"
+                        class="size-12 shrink-0 rounded-lg border border-neutral-200 object-cover"
+                      />
+                    } @else {
+                      <span
+                        class="grid size-12 shrink-0 place-items-center rounded-lg bg-[#f3e9df] text-[#6b422d]"
+                      >
+                        <i class="fa-solid fa-mug-hot"></i>
+                      </span>
+                    }
+                    <div class="min-w-0">
+                      <p class="text-sm font-medium text-[#2b1d14]">
+                        {{ d.productName }}
+                        <span class="font-normal text-neutral-400">({{ d.variantName }})</span>
+                      </p>
+                      <p class="mt-0.5 text-xs text-neutral-500">
+                        {{ d.quantity }} × {{ d.unitPrice | currency }}
+                      </p>
+                      @if (d.addons.length) {
+                        <ul class="mt-1.5 space-y-1">
+                          @for (a of d.addons; track a.id) {
+                            <li
+                              class="flex flex-wrap items-center gap-x-2 text-xs text-neutral-500"
+                            >
+                              <span class="rounded-md border border-neutral-200 px-1.5 py-0.5">
+                                + {{ a.addonName }}
+                              </span>
+                              <span>{{ a.quantity }} × {{ a.unitPrice | currency }}</span>
+                              <span class="font-medium text-neutral-600">
+                                {{ a.subtotal | currency }}
+                              </span>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </div>
+                  </div>
+                  <span class="shrink-0 text-sm font-semibold text-[#6b422d]">
+                    {{ d.subtotal | currency }}
+                  </span>
+                </li>
+              } @empty {
+                <li class="px-4 py-6 text-center text-sm text-neutral-400">
+                  No items on this order.
+                </li>
+              }
+            </ul>
+
+            <div class="mt-3 space-y-1.5 rounded-xl bg-[#faf8f5] px-4 py-3 text-sm">
+              <div class="flex justify-between text-neutral-500">
+                <span>Subtotal</span>
+                <span>{{ o.totalAmount | currency }}</span>
+              </div>
+              @if (o.discountAmount > 0) {
+                <div class="flex justify-between text-emerald-600">
+                  <span>Discount</span>
+                  <span>-{{ o.discountAmount | currency }}</span>
+                </div>
+              }
+              @if (o.taxAmount > 0) {
+                <div class="flex justify-between text-neutral-500">
+                  <span>Tax</span>
+                  <span>{{ o.taxAmount | currency }}</span>
+                </div>
+              }
+              <div class="flex items-center justify-between border-t border-neutral-200 pt-2">
+                <span class="font-medium text-[#2b1d14]">Total</span>
+                <span class="text-lg font-semibold text-[#2b1d14]">
+                  {{ o.finalAmount | currency }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer + history -->
+          <div class="space-y-4 md:col-span-2">
+            <div class="rounded-xl bg-[#faf8f5] p-4">
+              <div class="flex items-center gap-3">
+                <span
+                  class="grid size-11 shrink-0 place-items-center rounded-full bg-[#f3e9df] text-sm font-semibold text-[#6b422d]"
+                >
+                  {{ initials(o.customerName) }}
+                </span>
+                <div class="min-w-0">
+                  <p class="truncate font-semibold text-[#2b1d14]">
+                    {{ o.customerName || 'Customer' }}
+                  </p>
+                  <p class="text-xs text-neutral-500">Customer ID: {{ o.customerId }}</p>
+                </div>
+              </div>
+
+              @if (stats(); as s) {
+                <div
+                  class="mt-4 grid grid-cols-3 gap-2 border-t border-neutral-200 pt-4 text-center"
+                >
+                  <div>
+                    <p class="font-semibold text-[#2b1d14]">{{ s.orders }}</p>
+                    <p class="text-xs text-neutral-500">Orders</p>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-[#2b1d14]">{{ s.spent | currency }}</p>
+                    <p class="text-xs text-neutral-500">Spent</p>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-[#2b1d14]">{{ s.cancelled }}</p>
+                    <p class="text-xs text-neutral-500">Cancelled</p>
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (history().length) {
+              <div>
+                <p class="mb-2 text-sm font-semibold text-[#2b1d14]">Other orders</p>
+                <div class="space-y-2">
+                  @for (h of history(); track h.id) {
+                    <button
+                      type="button"
+                      class="flex w-full items-center justify-between gap-3 rounded-lg border border-neutral-100 px-3 py-2.5 text-left transition hover:bg-[#faf8f5]"
+                      (click)="openOrder.emit(h.id)"
+                    >
+                      <span class="min-w-0">
+                        <span class="block text-sm font-medium text-neutral-800">
+                          {{ h.orderNumber }}
+                        </span>
+                        <span class="block truncate text-xs text-neutral-400">
+                          {{ h.orderDate | date: 'MMM d, h:mm a' }} · {{ itemSummary(h) }}
+                        </span>
+                      </span>
+                      <span class="flex shrink-0 flex-col items-end gap-1">
+                        <span class="text-sm font-semibold text-[#6b422d]">
+                          {{ h.finalAmount | currency }}
+                        </span>
+                        <app-order-status-badge [status]="h.status" />
+                      </span>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div
+        class="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-100 px-6 py-4"
+      >
+        @if (cancellable()) {
+          <button
+            type="button"
+            class="rounded-lg px-4 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+            [disabled]="busyId() !== null"
+            (click)="confirmingCancel.set(true)"
+          >
+            Cancel order
+          </button>
+        } @else {
+          <span></span>
+        }
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="rounded-lg border border-neutral-200 px-5 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+            (click)="close()"
+          >
+            Close
+          </button>
+          @if (alt(); as a) {
+            <button
+              type="button"
+              class="flex items-center gap-1.5 rounded-lg border border-neutral-700 px-5 py-2.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-60"
+              [disabled]="busyId() !== null"
+              (click)="run(a)"
+            >
+              <i [class]="a.icon" class="text-xs"></i> {{ a.label }}
+            </button>
+          }
+          @if (next(); as n) {
+            <button
+              type="button"
+              class="flex items-center gap-1.5 rounded-lg bg-[#e95f37] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#d4532e] disabled:opacity-60"
+              [disabled]="busyId() !== null"
+              (click)="run(n)"
+            >
+              @if (busyId() === o.id) {
+                <i class="fa-solid fa-spinner fa-spin text-xs"></i>
+              } @else {
+                <i [class]="n.icon" class="text-xs"></i>
+              }
+              {{ n.label }}
+            </button>
+          }
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <app-confirm-dialog
+    [open]="confirmingCancel()"
+    title="Cancel order"
+    [message]="'Cancel order ' + o.orderNumber + '? The customer will see it as cancelled.'"
+    (confirmed)="cancel()"
+    (cancelled)="confirmingCancel.set(false)"
+  />
+}

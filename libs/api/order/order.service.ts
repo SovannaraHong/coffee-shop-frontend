@@ -1,37 +1,9 @@
-// import { API_URL } from '../api-config';
-// import { ApiClient } from '../api-client';
-// import { HttpClient } from '@angular/common/http';
-// import { inject, Injectable } from '@angular/core';
-// import { OrderCreateRequest } from '../../models/order/order-request.model';
-// import { Observable } from 'rxjs';
-// import { OrderResponse } from '../../models/order/order-response.model';
-// @Injectable({ providedIn: 'root' })
-// export class OrderApiService {
-//   private readonly apiClient = inject(ApiClient);
-//   private readonly apiUrl = inject(API_URL);
-
-//   private readonly endpoint = `${this.apiUrl}/orders`;
-//   create(request?: OrderCreateRequest): Observable<OrderResponse> {
-//     return this.apiClient.post<OrderResponse>(`${this.endpoint}`, request);
-//   }
-//   findById(id: number): Observable<OrderResponse> {
-//     return this.apiClient.get<OrderResponse>(`${this.endpoint}/${id}`);
-//   }
-
-//   findByCustomer(customerId: number): Observable<OrderResponse[]> {
-//     return this.apiClient.get<OrderResponse[]>(`${this.endpoint}/customer/${customerId}`);
-//   }
-
-//   getAllOder(): Observable<OrderResponse[]> {
-//     return this.apiClient.get<OrderResponse[]>(`${this.endpoint}/all`);
-//   }
-// }
-import { API_URL } from '../api-config';
-import { ApiClient } from '../api-client';
-import { HttpClient } from '@angular/common/http';
+import { OrderAction } from './../../models/order/order-action';
 import { inject, Injectable } from '@angular/core';
-import { OrderCreateRequest } from '../../models/order/order-request.model';
 import { Observable } from 'rxjs';
+import { ApiClient } from './../api-client';
+import { API_URL } from '../api-config';
+import { OrderCreateRequest } from '../../models/order/order-request.model';
 import { OrderResponse } from '../../models/order/order-response.model';
 
 @Injectable({ providedIn: 'root' })
@@ -41,27 +13,27 @@ export class OrderApiService {
 
   private readonly endpoint = `${this.apiUrl}/orders`;
 
-  create(request?: OrderCreateRequest): Observable<OrderResponse> {
-    return this.apiClient.post<OrderResponse>(`${this.endpoint}`, request);
-  }
+  // ---------- Read ----------
 
-  findById(id: number): Observable<OrderResponse> {
-    return this.apiClient.get<OrderResponse>(`${this.endpoint}/${id}`);
-  }
-
-  findByCustomer(customerId: number): Observable<OrderResponse[]> {
-    return this.apiClient.get<OrderResponse[]>(`${this.endpoint}/customer/${customerId}`);
-  }
-
-  getAllOder(): Observable<OrderResponse[]> {
+  getAllOrders(): Observable<OrderResponse[]> {
     return this.apiClient.get<OrderResponse[]>(`${this.endpoint}/all`);
   }
 
-  // getPagination(params: Record<string, string>): Observable<PageDTO<OrderResponse>> {
-  //   return this.apiClient.get<PageDTO<OrderResponse>>(`${this.endpoint}`, { params });
-  // }
+  getOrderById(id: number): Observable<OrderResponse> {
+    return this.apiClient.get<OrderResponse>(`${this.endpoint}/${id}`);
+  }
 
-  // --- status transitions ---
+  getOrdersByCustomer(customerId: number): Observable<OrderResponse[]> {
+    return this.apiClient.get<OrderResponse[]>(`${this.endpoint}/customer/${customerId}`);
+  }
+
+  // ---------- Create ----------
+
+  createOrder(request: OrderCreateRequest): Observable<OrderResponse> {
+    return this.apiClient.post<OrderResponse>(this.endpoint, request);
+  }
+
+  // ---------- Status (one method per backend endpoint) ----------
 
   confirm(id: number): Observable<OrderResponse> {
     return this.apiClient.patch<OrderResponse>(`${this.endpoint}/${id}/confirm`, {});
@@ -85,5 +57,23 @@ export class OrderApiService {
 
   complete(id: number): Observable<OrderResponse> {
     return this.apiClient.patch<OrderResponse>(`${this.endpoint}/${id}/complete`, {});
+  }
+
+  /** Picks the right method above, so the UI can work with one `OrderAction`. */
+  changeStatus(id: number, action: OrderAction): Observable<OrderResponse> {
+    switch (action) {
+      case 'confirm':
+        return this.confirm(id);
+      case 'preparing':
+        return this.markPreparing(id);
+      case 'ready':
+        return this.markReady(id);
+      case 'delivering':
+        return this.markDelivering(id);
+      case 'complete':
+        return this.complete(id);
+      case 'cancel':
+        return this.cancel(id);
+    }
   }
 }

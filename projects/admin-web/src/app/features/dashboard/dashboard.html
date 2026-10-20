@@ -205,18 +205,29 @@
           >
             <span
               class="grid size-[52px] shrink-0 place-items-center rounded-md bg-neutral-100 text-sm font-semibold text-neutral-600"
-              >{{ o.customer.charAt(0) }}</span
             >
+              {{ (o.customerName || 'C').charAt(0).toUpperCase() }}
+            </span>
+
             <div class="min-w-0 flex-1">
-              <p class="truncate text-[15px] text-neutral-900">{{ o.customer }}</p>
+              <p class="truncate text-[15px] text-neutral-900">
+                {{ o.customerName || 'Customer' }}
+              </p>
+
               <p class="mt-0.5 text-[13px] text-neutral-600">
-                <span class="font-semibold text-neutral-900">{{ o.number }}</span> &nbsp;•&nbsp;
-                {{ o.total | currency }}
+                <span class="font-semibold text-neutral-900">
+                  {{ o.orderNumber }}
+                </span>
+                &nbsp;•&nbsp;
+                {{ o.finalAmount | currency }}
               </p>
             </div>
+
             <app-status-badge [status]="o.status" />
           </a>
         </li>
+      } @empty {
+        <li class="px-4 py-8 text-center text-sm text-neutral-500">No recent orders found.</li>
       }
     </ul>
   </div>

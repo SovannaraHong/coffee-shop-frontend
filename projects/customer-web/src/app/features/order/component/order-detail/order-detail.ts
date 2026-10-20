@@ -146,7 +146,7 @@ export class OrderDetail {
     }
     this.error.set(null);
 
-    this.orderApi.findById(id).subscribe({
+    this.orderApi.getOrderById(id).subscribe({
       next: (order) => {
         this.order.set(order);
         this.loading.set(false);
