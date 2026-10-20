@@ -1,0 +1,38 @@
+@if (cancelled()) {
+  <div
+    class="flex items-center gap-2.5 rounded-xl bg-neutral-100 px-4 py-3 text-sm text-neutral-600"
+  >
+    <i class="fa-solid fa-ban"></i> This order was cancelled.
+  </div>
+} @else {
+  <ol class="flex items-start">
+    @for (s of steps(); track s; let i = $index; let last = $last) {
+      <li class="flex flex-1 flex-col" [class.flex-none]="last">
+        <div class="flex w-full items-center">
+          <span
+            class="grid size-9 shrink-0 place-items-center rounded-full text-xs transition-colors"
+            [class]="
+              i <= current() ? meta[s].dot + ' text-white' : 'bg-neutral-100 text-neutral-400'
+            "
+            [class.ring-4]="i === current()"
+            [class.ring-orange-100]="i === current()"
+          >
+            <i [class]="i < current() ? 'fa-solid fa-check' : meta[s].icon"></i>
+          </span>
+          @if (!last) {
+            <span
+              class="h-0.5 flex-1 transition-colors"
+              [class]="i < current() ? 'bg-[#e95f37]' : 'bg-neutral-200'"
+            ></span>
+          }
+        </div>
+        <span
+          class="mt-2 text-xs"
+          [class]="i === current() ? 'font-semibold text-[#2b1d14]' : 'text-neutral-400'"
+        >
+          {{ meta[s].label }}
+        </span>
+      </li>
+    }
+  </ol>
+}

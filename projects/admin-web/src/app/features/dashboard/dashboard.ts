@@ -60,27 +60,34 @@ export class Dashboard {
     { label: 'Returning', value: 548, color: '#10b981' },
   ];
 
-  private readonly todaysOrders = computed(() =>
-    this.orders.items().filter((o) => o.createdAt.startsWith(DEMO_TODAY)),
-  );
+  private readonly todaysOrders = computed(() => {
+    const today = new Date().toDateString();
+
+    return this.orders.items().filter((o) => new Date(o.orderDate).toDateString() === today);
+  });
   protected readonly todaysOrderCount = computed(() => this.todaysOrders().length);
   protected readonly todaysSales = computed(() =>
     this.todaysOrders()
-      .filter((o) => o.status !== 'Cancelled')
-      .reduce((sum, o) => sum + o.total, 0),
+      .filter((o) => o.status !== 'CANCELLED')
+      .reduce((sum, o) => sum + (o.finalAmount ?? 0), 0),
   );
   protected readonly avgOrderValue = computed(() => {
-    const list = this.todaysOrders().filter((o) => o.status !== 'Cancelled');
+    const list = this.todaysOrders().filter((o) => o.status !== 'CANCELLED');
+
     return list.length ? this.todaysSales() / list.length : 0;
   });
   protected readonly customerCount = computed(
-    () => new Set(this.orders.items().map((o) => o.customer)).size,
+    () => new Set(this.orders.items().map((o) => o.customerName)).size,
   );
   protected readonly lowStockCount = computed(
     () => this.inventory.lowStock().length + this.inventory.outOfStock().length,
   );
 
-  protected readonly recentOrders = computed(() => this.orders.recent().slice(0, 5));
+  protected readonly recentOrders = computed(() =>
+    [...this.orders.items()]
+      .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
+      .slice(0, 5),
+  );
   protected readonly lowStockItems = computed(() =>
     this.inventory
       .items()

@@ -1,28 +1,61 @@
-import { Injectable, computed } from '@angular/core';
+import { OrderApiService } from './../../../../../../libs/api/order/order.service';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Order, OrderStatus } from '../models/order';
-import { ORDERS } from '../data/mock-data';
-import { InMemoryStore } from './in-memory-store';
-
-const FLOW: OrderStatus[] = ['Pending', 'Preparing', 'Ready', 'Completed'];
+import { OrderResponse } from '../../../../../../libs/models/order/order-response.model';
+import { firstValueFrom } from 'rxjs';
+import { OrderAction } from '../../../../../../libs/models/order/order-action';
 
 @Injectable({ providedIn: 'root' })
-export class OrderService extends InMemoryStore<Order> {
-  /** Newest first */
-  readonly recent = computed(() =>
-    [...this.items()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-  );
+export class OrderService {
+  private readonly orderApi = inject(OrderApiService);
 
-  constructor() {
-    super(ORDERS);
+  private readonly _items = signal<OrderResponse[]>([]);
+  private readonly _loading = signal(false);
+  private readonly _error = signal(false);
+
+  // id of the order currently changing status (null = none)
+  private readonly _busyId = signal<number | null>(null);
+
+  readonly items = this._items.asReadonly();
+  readonly loading = this._loading.asReadonly();
+  readonly error = this._error.asReadonly();
+  readonly busyId = this._busyId.asReadonly();
+
+  /** silent = background refresh (no spinner flash, no error banner). */
+  async load(silent = false): Promise<boolean> {
+    if (!silent) {
+      this._error.set(false);
+      this._loading.set(true);
+    }
+    try {
+      this._items.set(await firstValueFrom(this.orderApi.getAllOrders()));
+      return true;
+    } catch (error) {
+      console.error('Failed to load orders:', error);
+      if (!silent) this._error.set(true);
+      return false;
+    } finally {
+      if (!silent) this._loading.set(false);
+    }
   }
 
-  /** Status that comes after `status`, or null when the order is finished/cancelled */
-  nextStatus(status: OrderStatus): OrderStatus | null {
-    const i = FLOW.indexOf(status);
-    return i >= 0 && i < FLOW.length - 1 ? FLOW[i + 1] : null;
-  }
-
-  setStatus(id: number, status: OrderStatus): void {
-    this.update(id, { status });
+  /** Move an order to a new status and patch it locally (no full reload). */
+  async changeStatus(id: number, action: OrderAction): Promise<OrderResponse | null> {
+    if (this._busyId() !== null) return null;
+    this._error.set(false);
+    this._busyId.set(id);
+    try {
+      const updated = await firstValueFrom(this.orderApi.changeStatus(id, action));
+      this._items.update((list) => list.map((o) => (o.id === id ? { ...o, ...updated } : o)));
+      return updated;
+    } catch (error) {
+      console.error(`Failed to ${action} order:`, error);
+      this._error.set(true);
+      // Someone else may have changed it already: resync.
+      await this.load(true);
+      return null;
+    } finally {
+      this._busyId.set(null);
+    }
   }
 }

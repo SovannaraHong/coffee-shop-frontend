@@ -27,7 +27,7 @@ export class OrderService {
   loadOrders(customerId: number) {
     this.loading.set(true);
     this.error.set(null);
-    this.orderApi.findByCustomer(customerId).subscribe({
+    this.orderApi.getOrdersByCustomer(customerId).subscribe({
       next: (orders) => {
         this.orders.set(orders);
         this.loading.set(false);

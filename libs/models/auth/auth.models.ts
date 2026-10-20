@@ -12,9 +12,16 @@ export interface LoginResponse extends Partial<TokenResponse> {
 }
 export interface AuthUser {
   id?: number;
+  fullName?: string;
   email?: string;
+  roleName?: string;
+  avatarUrl?: string;
+  isActive?: boolean;
+
+  // Keep these if other parts of your app use them.
   firstName?: string;
   lastName?: string;
+
   [key: string]: unknown;
 }
 export interface Session {
