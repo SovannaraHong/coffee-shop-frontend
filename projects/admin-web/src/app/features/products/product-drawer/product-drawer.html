@@ -178,10 +178,10 @@
             </button>
           </div>
 
-          <div formArrayName="variants" class="space-y-3">
-            @for (v of variants.controls; track $index; let i = $index) {
+          <div class="space-y-3">
+            @for (v of variants.controls; track v; let i = $index) {
               <div
-                [formGroupName]="i"
+                [formGroup]="v"
                 class="rounded-xl border border-neutral-200 bg-neutral-50/60 p-3"
               >
                 <div class="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1.2fr_120px_1.2fr_auto]">

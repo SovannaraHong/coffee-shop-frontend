@@ -1,0 +1,309 @@
+<!-- Header -->
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <h1 class="text-[28px] font-normal leading-tight text-neutral-900">Recipes</h1>
+    <p class="mt-1 text-[15px] text-neutral-900">
+      Set the ingredients each size uses
+      @if (missingCount() > 0) {
+        <span
+          class="ml-2 rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700"
+        >
+          {{ missingCount() }} size(s) without a recipe
+        </span>
+      }
+    </p>
+  </div>
+  <button
+    type="button"
+    class="flex h-[42px] items-center gap-1.5 rounded-md bg-[#e95f37] px-4 text-[15px] text-white hover:bg-[#d4532e]"
+    (click)="openAdd()"
+  >
+    <i class="fa-solid fa-plus text-xs"></i> Add recipe
+  </button>
+</div>
+
+<!-- Table card -->
+<div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+  <div class="flex items-center justify-between border-b border-neutral-200 p-4">
+    <p class="text-sm text-neutral-500">{{ filtered().length }} recipe(s)</p>
+    <div class="relative w-full sm:w-72">
+      <i
+        class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+      ></i>
+      <input
+        type="search"
+        placeholder="Search product, size or ingredient…"
+        class="h-[38px] w-full rounded-full border border-neutral-200 bg-white pl-9 pr-4 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+        [value]="search()"
+        (input)="setSearch($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  @if (error(); as err) {
+    <p class="m-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ err }}</p>
+  }
+
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-[15px]">
+      <thead>
+        <tr class="h-[42px] bg-[#f7f7f7] text-xs uppercase tracking-wide text-neutral-500">
+          <th class="px-5 font-medium">Product / Size</th>
+          <th class="px-5 font-medium">Ingredients</th>
+          <th class="px-5 font-medium">Instructions</th>
+          <th class="px-5 text-center font-medium">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-neutral-100">
+        @if (loading() && recipes().length === 0) {
+          <tr>
+            <td colspan="4" class="px-5 py-12 text-center text-sm text-neutral-400">
+              Loading recipes…
+            </td>
+          </tr>
+        }
+
+        @for (r of paged(); track r.id) {
+          <tr class="h-[76px] transition-colors hover:bg-[#faf8f5]">
+            <!-- Product / size -->
+            <td class="px-5 py-3">
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#f3e9df] text-[#6b422d]"
+                >
+                  <i class="fa-solid fa-mug-hot"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="truncate font-semibold text-[#2b1d14]">{{ r.productName }}</p>
+                  <span
+                    class="mt-1 inline-flex rounded-full bg-[#f3e9df] px-2.5 py-0.5 text-xs font-medium text-[#6b422d]"
+                  >
+                    {{ r.productVariantName }}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <!-- Ingredients -->
+            <td class="px-5 py-3">
+              <div class="flex flex-wrap gap-1">
+                @for (i of r.ingredients.slice(0, 3); track i.id) {
+                  <span
+                    class="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs text-neutral-600"
+                  >
+                    {{ i.ingredientName }}
+                    <span class="font-semibold text-[#6b422d]">
+                      {{ i.quantityRequired | number: '1.0-2' }}{{ i.ingredientUnit }}
+                    </span>
+                  </span>
+                }
+                @if (r.ingredients.length > 3) {
+                  <span class="rounded-md bg-neutral-100 px-2 py-1 text-xs text-neutral-500">
+                    +{{ r.ingredients.length - 3 }} more
+                  </span>
+                }
+              </div>
+            </td>
+
+            <!-- Instructions -->
+            <td class="max-w-[260px] px-5 py-3">
+              <p class="truncate text-sm text-neutral-500">
+                {{ r.instructions || '—' }}
+              </p>
+            </td>
+
+            <!-- Actions -->
+            <td class="px-5 py-3">
+              <div class="flex items-center justify-center gap-1">
+                <button
+                  type="button"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-[#f3e9df] hover:text-[#6b422d]"
+                  title="View recipe"
+                  [attr.aria-label]="
+                    'View recipe for ' + r.productName + ' ' + r.productVariantName
+                  "
+                  (click)="view(r)"
+                >
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+                <button
+                  type="button"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-blue-50 hover:text-blue-600"
+                  title="Edit recipe"
+                  [attr.aria-label]="
+                    'Edit recipe for ' + r.productName + ' ' + r.productVariantName
+                  "
+                  (click)="openEdit(r)"
+                >
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button
+                  type="button"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-red-50 hover:text-red-600"
+                  title="Delete recipe"
+                  [attr.aria-label]="
+                    'Delete recipe for ' + r.productName + ' ' + r.productVariantName
+                  "
+                  [disabled]="saving()"
+                  (click)="toDelete.set(r)"
+                >
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          @if (!loading()) {
+            <tr>
+              <td colspan="4" class="px-5 py-12 text-center">
+                <div class="flex flex-col items-center gap-2">
+                  <i class="fa-solid fa-flask text-3xl text-neutral-300"></i>
+                  <p class="font-medium text-neutral-600">No recipes found</p>
+                  <p class="text-sm text-neutral-400">
+                    Add a recipe to tell the system what each size uses.
+                  </p>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer / pagination -->
+  <div class="flex items-center justify-between border-t border-neutral-200 px-5 py-3">
+    <span class="text-sm text-neutral-500"
+      >Showing {{ paged().length }} of {{ filtered().length }} recipes</span
+    >
+    <div class="flex overflow-hidden rounded-md border border-neutral-200 text-[15px]">
+      <button
+        type="button"
+        class="bg-neutral-200 px-3.5 py-1.5 text-neutral-600"
+        [disabled]="page() === 1"
+        (click)="goTo(page() - 1)"
+      >
+        Previous
+      </button>
+      @for (n of pages(); track n) {
+        <button
+          type="button"
+          class="border-l border-neutral-200 px-3.5 py-1.5"
+          [class]="
+            n === page()
+              ? 'bg-[#e95f37] text-white'
+              : 'bg-white text-neutral-700 hover:bg-neutral-100'
+          "
+          (click)="goTo(n)"
+        >
+          {{ n }}
+        </button>
+      }
+      <button
+        type="button"
+        class="border-l border-neutral-200 bg-white px-3.5 py-1.5 text-neutral-700 hover:bg-neutral-100"
+        [disabled]="page() === pageCount()"
+        (click)="goTo(page() + 1)"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Recipe details modal -->
+@if (selected(); as recipe) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+    (click)="closeView()"
+  >
+    <section
+      class="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="recipe-view-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
+        <div>
+          <h2 id="recipe-view-title" class="text-lg font-semibold text-[#2b1d14]">
+            {{ recipe.productName }}
+            <span class="font-normal text-neutral-500">· {{ recipe.productVariantName }}</span>
+          </h2>
+          <p class="mt-1 text-xs text-neutral-400">Recipe ID: {{ recipe.id }}</p>
+        </div>
+        <button
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
+          aria-label="Close recipe details"
+          (click)="closeView()"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-5 p-6">
+        <div>
+          <p class="mb-2 text-sm font-semibold text-[#2b1d14]">Ingredients</p>
+          <div class="space-y-2">
+            @for (i of recipe.ingredients; track i.id) {
+              <div
+                class="flex items-center justify-between rounded-lg border border-neutral-100 px-4 py-3"
+              >
+                <span class="text-sm text-neutral-700">{{ i.ingredientName }}</span>
+                <span class="font-semibold text-[#6b422d]">
+                  {{ i.quantityRequired | number: '1.0-2' }} {{ i.ingredientUnit }}
+                </span>
+              </div>
+            } @empty {
+              <p class="text-sm text-neutral-400">No ingredients.</p>
+            }
+          </div>
+        </div>
+
+        <div>
+          <p class="mb-2 text-sm font-semibold text-[#2b1d14]">Instructions</p>
+          <p class="whitespace-pre-line rounded-xl bg-[#faf8f5] p-4 text-sm text-neutral-600">
+            {{ recipe.instructions || 'No instructions.' }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex justify-end border-t border-neutral-100 px-6 py-4">
+        <button
+          type="button"
+          class="rounded-lg bg-[#3f2a1d] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#2b1d14]"
+          (click)="closeView()"
+        >
+          Close
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+<app-recipe-drawer
+  [open]="showDrawer()"
+  [recipe]="editing()"
+  [products]="products()"
+  [ingredients]="ingredients()"
+  [takenVariantIds]="takenVariantIds()"
+  [saving]="saving()"
+  [error]="saveError()"
+  (closed)="closeDrawer()"
+  (saved)="onSaved($event)"
+/>
+<app-confirm-dialog
+  [open]="!!toDelete()"
+  title="Delete recipe"
+  [message]="
+    'Delete the recipe for ' +
+    toDelete()?.productName +
+    ' (' +
+    toDelete()?.productVariantName +
+    ')? This cannot be undone.'
+  "
+  (confirmed)="confirmDelete()"
+  (cancelled)="toDelete.set(null)"
+/>

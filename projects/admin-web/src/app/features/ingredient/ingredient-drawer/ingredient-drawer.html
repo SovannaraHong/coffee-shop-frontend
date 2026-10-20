@@ -1,184 +1,122 @@
-@if (mounted()) {
-  <div class="fixed inset-0 z-[100]" [class.pointer-events-none]="!open()">
-    <!-- Backdrop -->
-    <div
-      class="absolute inset-0 bg-neutral-900/40 backdrop-blur-[2px] transition-opacity duration-300"
-      [class]="shown() ? 'opacity-100' : 'opacity-0'"
-      (click)="closed.emit()"
-    ></div>
-
-    <!-- Panel -->
+@if (open()) {
+  <div class="fixed inset-0 z-50 flex justify-end bg-black/40" (click)="close()">
     <aside
-      class="absolute right-0 top-0 flex h-full flex-col bg-white shadow-2xl"
-      style="
-        width: min(720px, 100vw);
-        transform: translateX(100%);
-        visibility: hidden;
-        transition:
-          transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
-          visibility 350ms;
-      "
-      [style.transform]="shown() ? 'translateX(0)' : 'translateX(100%)'"
-      [style.visibility]="shown() ? 'visible' : 'hidden'"
+      class="flex h-full w-full max-w-md flex-col bg-white shadow-2xl"
       role="dialog"
       aria-modal="true"
-      aria-label="Ingredient form"
+      aria-labelledby="ingredient-drawer-title"
+      (click)="$event.stopPropagation()"
     >
-      <!-- Header -->
-      <div class="flex items-center justify-between border-b border-neutral-200 px-8 py-5">
+      <div class="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
         <div>
-          <h2 class="text-xl font-medium text-neutral-900">
-            {{ item() ? 'Edit ingredient' : 'Add ingredient' }}
+          <h2 id="ingredient-drawer-title" class="text-lg font-semibold text-[#2b1d14]">
+            {{ isEdit() ? 'Edit ingredient' : 'Add ingredient' }}
           </h2>
-          <p class="mt-0.5 text-sm text-neutral-500">Unit, stock, reorder level and status</p>
+          <p class="mt-1 text-xs text-neutral-400">
+            {{ isEdit() ? 'Change name, unit or reorder level.' : 'Create a new stock item.' }}
+          </p>
         </div>
         <button
           type="button"
-          class="grid size-9 place-items-center rounded-lg bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200"
+          class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
           aria-label="Close"
-          (click)="closed.emit()"
+          (click)="close()"
         >
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <!-- Body -->
-      <form
-        [formGroup]="form"
-        (ngSubmit)="submit()"
-        novalidate
-        id="ingredientForm"
-        class="flex-1 overflow-y-auto px-8 py-6"
-      >
-        <div class="grid gap-6 sm:grid-cols-2">
-          <div class="sm:col-span-2">
-            <label for="ingredient-name" class="mb-1.5 block text-sm font-medium text-neutral-700"
-              >Ingredient name</label
-            >
-            <div class="relative">
-              <i
-                class="fa-solid fa-wheat-awn pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
-              ></i>
-              <input
-                id="ingredient-name"
-                formControlName="name"
-                placeholder="e.g. Espresso beans"
-                class="h-[42px] w-full rounded-md border border-neutral-200 pl-9 pr-3.5 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
-              />
-            </div>
-            @if (form.controls.name.touched && form.controls.name.invalid) {
-              <p class="mt-1 text-xs text-red-500">Ingredient name is required.</p>
+      <div class="flex-1 space-y-5 overflow-y-auto p-6">
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-neutral-700">Name</span>
+          <input
+            type="text"
+            maxlength="150"
+            placeholder="e.g. Green tea leaves"
+            class="h-[42px] w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+            [value]="name()"
+            (input)="name.set($any($event.target).value)"
+          />
+        </label>
+
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-neutral-700">Unit</span>
+          <input
+            type="text"
+            maxlength="20"
+            list="ingredient-units"
+            placeholder="g, ml, pcs…"
+            class="h-[42px] w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+            [value]="unit()"
+            (input)="unit.set($any($event.target).value)"
+          />
+          <datalist id="ingredient-units">
+            @for (u of unitSuggestions; track u) {
+              <option [value]="u"></option>
             }
-          </div>
+          </datalist>
+        </label>
 
-          <div class="sm:col-span-2">
-            <span class="mb-2 block text-sm font-medium text-neutral-700">Unit</span>
-            <div class="flex flex-wrap gap-2">
-              @for (o of unitOptions; track o) {
-                <button
-                  type="button"
-                  class="rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
-                  [class]="
-                    form.controls.unit.value === o
-                      ? 'border-[#e95f37] bg-[#e95f37]/10 text-[#e95f37]'
-                      : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                  "
-                  (click)="form.controls.unit.setValue(o)"
-                >
-                  {{ o }}
-                </button>
-              }
-            </div>
-          </div>
-
-          <div>
-            <label
-              for="ingredient-quantityInStock"
-              class="mb-1.5 block text-sm font-medium text-neutral-700"
-              >Quantity in stock</label
-            >
-            <div class="relative">
-              <i
-                class="fa-solid fa-boxes-stacked pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
-              ></i>
+        <div class="grid grid-cols-2 gap-4">
+          @if (!isEdit()) {
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium text-neutral-700">Starting stock</span>
               <input
-                id="ingredient-quantityInStock"
                 type="number"
+                min="0"
                 step="any"
-                formControlName="quantityInStock"
-                class="h-[42px] w-full rounded-md border border-neutral-200 pl-9 pr-3.5 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+                placeholder="0"
+                class="h-[42px] w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+                [value]="stock()"
+                (input)="stock.set($any($event.target).value)"
               />
-            </div>
-          </div>
-
-          <div>
-            <label
-              for="ingredient-reorderLevel"
-              class="mb-1.5 block text-sm font-medium text-neutral-700"
-              >Reorder level</label
-            >
-            <div class="relative">
-              <i
-                class="fa-solid fa-triangle-exclamation pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
-              ></i>
-              <input
-                id="ingredient-reorderLevel"
-                type="number"
-                step="any"
-                formControlName="reorderLevel"
-                class="h-[42px] w-full rounded-md border border-neutral-200 pl-9 pr-3.5 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
-              />
-            </div>
-          </div>
-
-          <div class="sm:col-span-2">
-            <span class="mb-2 block text-sm font-medium text-neutral-700">Status</span>
-            <div class="flex gap-2">
-              <button
-                type="button"
-                class="rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
-                [class]="
-                  form.controls.isActive.value
-                    ? 'border-[#e95f37] bg-[#e95f37]/10 text-[#e95f37]'
-                    : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                "
-                (click)="form.controls.isActive.setValue(true)"
-              >
-                Active
-              </button>
-              <button
-                type="button"
-                class="rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
-                [class]="
-                  !form.controls.isActive.value
-                    ? 'border-[#e95f37] bg-[#e95f37]/10 text-[#e95f37]'
-                    : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                "
-                (click)="form.controls.isActive.setValue(false)"
-              >
-                Inactive
-              </button>
-            </div>
-          </div>
+            </label>
+          }
+          <label class="block" [class.col-span-2]="isEdit()">
+            <span class="mb-1 block text-sm font-medium text-neutral-700">Reorder level</span>
+            <input
+              type="number"
+              min="0"
+              step="any"
+              placeholder="Alert when stock is at or below"
+              class="h-[42px] w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+              [value]="reorder()"
+              (input)="reorder.set($any($event.target).value)"
+            />
+          </label>
         </div>
-      </form>
 
-      <!-- Footer -->
-      <div class="flex gap-3 border-t border-neutral-200 px-8 py-4">
+        @if (isEdit()) {
+          <p class="rounded-lg bg-[#faf8f5] px-4 py-3 text-xs text-neutral-500">
+            To change the amount in stock, use the stock button (add, remove or set exact) in the
+            list.
+          </p>
+        }
+
+        @if (submitted() && formError(); as msg) {
+          <p class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ msg }}</p>
+        }
+        @if (error(); as err) {
+          <p class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ err }}</p>
+        }
+      </div>
+
+      <div class="flex justify-end gap-2 border-t border-neutral-100 px-6 py-4">
         <button
           type="button"
-          class="h-[42px] flex-1 rounded-md border border-neutral-700 bg-white text-[15px] text-neutral-700 hover:bg-neutral-50"
-          (click)="closed.emit()"
+          class="h-[42px] rounded-lg border border-neutral-200 bg-white px-5 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+          [disabled]="saving()"
+          (click)="close()"
         >
           Cancel
         </button>
         <button
-          type="submit"
-          form="ingredientForm"
-          class="h-[42px] flex-1 rounded-md bg-[#e95f37] text-[15px] text-white hover:bg-[#d4532e]"
+          type="button"
+          class="h-[42px] rounded-lg bg-[#e95f37] px-5 text-sm font-medium text-white hover:bg-[#d4532e] disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="saving()"
+          (click)="save()"
         >
-          <i class="fa-solid fa-check mr-1.5 text-xs"></i
-          >{{ item() ? 'Save changes' : 'Add ingredient' }}
+          {{ saving() ? 'Saving…' : isEdit() ? 'Save changes' : 'Create ingredient' }}
         </button>
       </div>
     </aside>

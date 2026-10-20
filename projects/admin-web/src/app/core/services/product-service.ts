@@ -75,26 +75,25 @@ export class ProductService {
     this._error.set(false);
     this._saving.set(true);
     try {
-      //step 1 crate product
+      // Step 1: create product
       const created = await firstValueFrom(this.productApiService.createProduct(request));
-      //step 2 upload image if select
+
+      // Step 2: upload image if one was selected
+      let imageFailed = false;
       if (imageFile) {
         try {
           await firstValueFrom(this.productApiService.uploadProductImage(created.id, imageFile));
         } catch (error) {
           console.error('Product created, but image upload failed:', error);
-          await this.load();
-          this._error.set(true);
-          return true;
+          imageFailed = true;
         }
-        await this.load();
-        this._error.set(true);
-
-        // Product was created; don't create a duplicate on retry.
-        return true;
       }
-      // Step 3: Refresh product list
+
+      // Step 3: refresh list
       await this.load();
+
+      // Product exists either way, so return true to avoid duplicate creation on retry.
+      if (imageFailed) this._error.set(true);
       return true;
     } catch (error) {
       console.error('Failed to create product:', error);

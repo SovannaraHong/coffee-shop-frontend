@@ -1,103 +1,80 @@
-import { DOCUMENT } from '@angular/common';
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-  untracked,
-} from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import {
-  Ingredient,
-  INGREDIENT_UNITS,
-  IngredientInput,
-} from '../../../../../../../libs/models/ingredient/ingredient';
-
-export type IngredientPayload = IngredientInput;
+import { Component, computed, effect, input, output, signal, untracked } from '@angular/core';
+import { IngredientResponse } from '../../../../../../../libs/models/ingredient/ingredient-response';
+import { IngredientPayload } from '../../../../../../../libs/models/ingredient/ingredient-request';
 
 @Component({
   selector: 'app-ingredient-drawer',
-  imports: [ReactiveFormsModule],
   templateUrl: './ingredient-drawer.html',
-  host: { '(document:keydown.escape)': 'closed.emit()' },
 })
 export class IngredientDrawer {
-  private readonly fb = inject(NonNullableFormBuilder);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly doc = inject(DOCUMENT);
-
   readonly open = input(false);
-  readonly item = input<Ingredient | null>(null);
+  readonly ingredient = input<IngredientResponse | null>(null);
+  readonly saving = input(false);
+  readonly error = input<string | null>(null);
 
   readonly closed = output<void>();
   readonly saved = output<IngredientPayload>();
 
-  protected readonly unitOptions = INGREDIENT_UNITS;
+  protected readonly unitSuggestions = ['g', 'kg', 'ml', 'l', 'pcs', 'shot'];
 
-  /** Rendered at all (only after the first open) */
-  protected readonly mounted = signal(false);
-  /** Drives the slide animation */
-  protected readonly shown = signal(false);
+  protected readonly name = signal('');
+  protected readonly unit = signal('');
+  protected readonly stock = signal('');
+  protected readonly reorder = signal('');
+  protected readonly submitted = signal(false);
 
-  private readonly defaults: IngredientInput = {
-    name: '',
-    unit: 'g',
-    quantityInStock: 0,
-    reorderLevel: 0,
-    isActive: true,
-  };
+  protected readonly isEdit = computed(() => !!this.ingredient());
 
-  protected readonly form = this.fb.group({
-    name: [this.defaults.name, Validators.required],
-    unit: [this.defaults.unit],
-    quantityInStock: [this.defaults.quantityInStock, Validators.min(0)],
-    reorderLevel: [this.defaults.reorderLevel, Validators.min(0)],
-    isActive: [this.defaults.isActive],
+  protected readonly formError = computed<string | null>(() => {
+    const name = this.name().trim();
+    const unit = this.unit().trim();
+    if (!name) return 'Name is required.';
+    if (name.length > 150) return 'Name must be at most 150 characters.';
+    if (!unit) return 'Unit is required.';
+    if (unit.length > 20) return 'Unit must be at most 20 characters.';
+    if (!this.isEdit() && this.stock() !== '' && Number(this.stock()) < 0) {
+      return 'Quantity in stock cannot be negative.';
+    }
+    if (this.reorder() !== '' && Number(this.reorder()) < 0) {
+      return 'Reorder level cannot be negative.';
+    }
+    return null;
   });
 
   constructor() {
-    // Render on top of the whole app (above the top bar and sidebar)
-    this.doc.body.appendChild(this.host.nativeElement);
-    inject(DestroyRef).onDestroy(() => this.host.nativeElement.remove());
-
     effect(() => {
-      if (this.open()) {
-        const s = this.item();
-        untracked(() => {
-          this.load(s);
-          this.mounted.set(true);
-          requestAnimationFrame(() => requestAnimationFrame(() => this.shown.set(true)));
-        });
-      } else {
-        untracked(() => this.shown.set(false));
+      if (!this.open()) {
+        return;
       }
+      const ingredient = this.ingredient();
+      untracked(() => this.reset(ingredient));
     });
   }
 
-  private load(s: Ingredient | null): void {
-    this.form.reset(
-      s
-        ? {
-            name: s.name,
-            unit: s.unit,
-            quantityInStock: s.quantityInStock,
-            reorderLevel: s.reorderLevel,
-            isActive: s.isActive,
-          }
-        : this.defaults,
-    );
-    this.form.markAsUntouched();
+  private reset(i: IngredientResponse | null): void {
+    this.submitted.set(false);
+    this.name.set(i?.name ?? '');
+    this.unit.set(i?.unit ?? '');
+    this.stock.set(i ? String(i.quantityInStock) : '');
+    this.reorder.set(i ? String(i.reorderLevel ?? '') : '');
   }
 
-  protected submit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+  protected close(): void {
+    if (!this.saving()) {
+      this.closed.emit();
+    }
+  }
+
+  protected save(): void {
+    this.submitted.set(true);
+    if (this.formError() || this.saving()) {
       return;
     }
-    this.saved.emit(this.form.getRawValue());
+    this.saved.emit({
+      name: this.name().trim(),
+      unit: this.unit().trim(),
+      quantityInStock: !this.isEdit() && this.stock() !== '' ? Number(this.stock()) : undefined,
+      reorderLevel: this.reorder() !== '' ? Number(this.reorder()) : undefined,
+    });
   }
 }

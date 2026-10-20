@@ -1,129 +1,266 @@
-<app-page-header title="Ingredients" subtitle="Raw materials and stock levels">
-  <button type="button" class="btn btn-primary" (click)="openAdd()">
-    <i class="fa-solid fa-plus"></i> Add ingredient
-  </button>
-</app-page-header>
-
-<div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-  <div></div>
-  <div class="relative md:w-64">
-    <i
-      class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
-    ></i>
-    <input
-      type="search"
-      class="input pl-9"
-      placeholder="Search ingredients…"
-      [value]="search()"
-      (input)="search.set($any($event.target).value)"
-    />
+<!-- Header -->
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <h1 class="text-[28px] font-normal leading-tight text-neutral-900">Ingredients</h1>
+    <p class="mt-1 text-[15px] text-neutral-900">
+      Track stock for everything your recipes use
+      @if (lowCount() > 0) {
+        <span class="ml-2 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">
+          {{ lowCount() }} low on stock
+        </span>
+      }
+    </p>
   </div>
+  <button
+    type="button"
+    class="flex h-[42px] items-center gap-1.5 rounded-md bg-[#e95f37] px-4 text-[15px] text-white hover:bg-[#d4532e]"
+    (click)="openAdd()"
+  >
+    <i class="fa-solid fa-plus text-xs"></i> Add ingredient
+  </button>
 </div>
 
-<div class="card overflow-hidden">
+<!-- Table card -->
+<div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+  <div
+    class="flex flex-col gap-3 border-b border-neutral-200 p-4 xl:flex-row xl:items-center xl:justify-between"
+  >
+    <!-- Tabs -->
+    <div class="inline-flex rounded-xl bg-neutral-100 p-1 text-sm">
+      @for (t of tabs; track t.value) {
+        <button
+          type="button"
+          class="rounded-lg px-3.5 py-1.5 font-medium transition-colors"
+          [class]="
+            filter() === t.value
+              ? 'bg-white text-neutral-900 shadow-sm'
+              : 'text-neutral-500 hover:text-neutral-700'
+          "
+          (click)="setFilter(t.value)"
+        >
+          {{ t.label }}
+        </button>
+      }
+    </div>
+
+    <div class="relative sm:w-64">
+      <i
+        class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+      ></i>
+      <input
+        type="search"
+        placeholder="Search ingredient…"
+        class="h-[38px] w-full rounded-full border border-neutral-200 bg-white pl-9 pr-4 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+        [value]="search()"
+        (input)="setSearch($any($event.target).value)"
+      />
+    </div>
+  </div>
+
+  @if (error(); as err) {
+    <p class="m-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ err }}</p>
+  }
+  @if (actionError(); as msg) {
+    <p class="m-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ msg }}</p>
+  }
+
   <div class="overflow-x-auto">
-    <table class="w-full min-w-[860px] text-left text-sm">
-      <thead class="border-b border-neutral-200 bg-neutral-50 text-xs font-medium text-neutral-500">
-        <tr>
-          <th class="px-5 py-3">Ingredient</th>
-          <th class="px-5 py-3">Quantity in stock</th>
-          <th class="px-5 py-3">Reorder level</th>
-          <th class="px-5 py-3">Level</th>
-          <th class="px-5 py-3">Status</th>
-          <th class="px-5 py-3">Created</th>
-          <th class="px-5 py-3">Created by</th>
-          <th class="px-5 py-3 text-right">Actions</th>
+    <table class="w-full text-left text-[15px]">
+      <thead>
+        <tr class="h-[42px] bg-[#f7f7f7] text-xs uppercase tracking-wide text-neutral-500">
+          <th class="px-5 font-medium">Ingredient</th>
+          <th class="px-5 font-medium">In stock</th>
+          <th class="px-5 font-medium">Reorder level</th>
+          <th class="px-5 font-medium">Status</th>
+          <th class="px-5 text-center font-medium">Actions</th>
         </tr>
       </thead>
+
       <tbody class="divide-y divide-neutral-100">
-        @for (r of filtered(); track r.id) {
-          <tr class="transition-colors hover:bg-neutral-50">
-            <td class="px-5 py-3 text-neutral-600">
-              <span class="font-medium text-neutral-900">{{ r.name }}</span>
+        @if (loading() && ingredients().length === 0) {
+          <tr>
+            <td colspan="5" class="px-5 py-12 text-center text-sm text-neutral-400">
+              Loading ingredients…
             </td>
-            <td class="px-5 py-3 text-neutral-600">
-              <span class="whitespace-nowrap">{{ r.quantityInStock | number }} {{ r.unit }}</span>
-            </td>
-            <td class="px-5 py-3 text-neutral-600">
-              <span class="whitespace-nowrap">{{ r.reorderLevel | number }} {{ r.unit }}</span>
-            </td>
-            <td class="px-5 py-3 text-neutral-600">
-              @if (r.quantityInStock <= r.reorderLevel) {
-                <span
-                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-50 text-amber-700"
-                  >Low stock</span
-                >
-              } @else {
-                <span
-                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-700"
-                  >In stock</span
-                >
-              }
-            </td>
-            <td class="px-5 py-3 text-neutral-600">
-              @if (r.isActive) {
-                <span
-                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-700"
-                  >Active</span
-                >
-              } @else {
-                <span
-                  class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-500"
-                  >Inactive</span
-                >
-              }
-            </td>
-            <td class="px-5 py-3 text-neutral-600">
-              <span class="whitespace-nowrap">{{ r.createdAt | date: 'MMM d, y' }}</span>
-            </td>
-            <td class="px-5 py-3 text-neutral-600">
-              <span class="text-neutral-500">{{ r.createdBy || '—' }}</span>
-            </td>
+          </tr>
+        }
+
+        @for (i of paged(); track i.id) {
+          <tr
+            class="h-[76px] transition-colors hover:bg-[#faf8f5]"
+            [class.opacity-60]="!i.isActive"
+          >
+            <!-- Ingredient -->
             <td class="px-5 py-3">
-              <div class="flex justify-end gap-1">
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#f3e9df] text-[#6b422d]"
+                >
+                  <i class="fa-solid fa-wheat-awn"></i>
+                </div>
+                <div class="min-w-0">
+                  <p class="truncate font-semibold text-[#2b1d14]">{{ i.name }}</p>
+                  <p class="mt-1 text-xs text-neutral-400">ID: {{ i.id }} · Unit: {{ i.unit }}</p>
+                </div>
+              </div>
+            </td>
+
+            <!-- Stock -->
+            <td class="px-5 py-3">
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-[#2b1d14]">
+                  {{ i.quantityInStock | number: '1.0-2' }} {{ i.unit }}
+                </span>
+                @if (i.isLowStock) {
+                  <span
+                    class="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700"
+                  >
+                    Low
+                  </span>
+                }
+              </div>
+            </td>
+
+            <!-- Reorder level -->
+            <td class="px-5 py-3 text-sm text-neutral-500">
+              {{ i.reorderLevel | number: '1.0-2' }} {{ i.unit }}
+            </td>
+
+            <!-- Status toggle -->
+            <td class="px-5 py-3">
+              <label class="inline-flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  class="peer sr-only"
+                  [checked]="i.isActive"
+                  [disabled]="saving()"
+                  [attr.aria-label]="'Enable ' + i.name"
+                  (change)="setActive(i, $any($event.target).checked)"
+                />
+                <span
+                  class="relative h-5 w-9 rounded-full bg-neutral-300 transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:bg-emerald-500 peer-checked:after:translate-x-4 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-500 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+                ></span>
+                <span
+                  class="text-xs font-medium"
+                  [class.text-emerald-700]="i.isActive"
+                  [class.text-neutral-400]="!i.isActive"
+                >
+                  {{ i.isActive ? 'Active' : 'Disabled' }}
+                </span>
+              </label>
+            </td>
+
+            <!-- Actions -->
+            <td class="px-5 py-3">
+              <div class="flex items-center justify-center gap-1">
                 <button
                   type="button"
-                  class="btn btn-icon btn-sm btn-light"
-                  aria-label="Edit"
-                  (click)="openEdit(r)"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-emerald-50 hover:text-emerald-600"
+                  title="Update stock"
+                  [attr.aria-label]="'Update stock for ' + i.name"
+                  (click)="openStock(i)"
+                >
+                  <i class="fa-solid fa-boxes-stacked"></i>
+                </button>
+                <button
+                  type="button"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-blue-50 hover:text-blue-600"
+                  title="Edit ingredient"
+                  [attr.aria-label]="'Edit ' + i.name"
+                  (click)="openEdit(i)"
                 >
                   <i class="fa-solid fa-pen-to-square"></i>
                 </button>
                 <button
                   type="button"
-                  class="btn btn-icon btn-sm bg-red-50 text-red-600 hover:bg-red-100"
-                  aria-label="Delete"
-                  (click)="toDelete.set(r)"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-red-50 hover:text-red-600"
+                  title="Delete ingredient"
+                  [attr.aria-label]="'Delete ' + i.name"
+                  [disabled]="saving()"
+                  (click)="toDelete.set(i)"
                 >
-                  <i class="fa-solid fa-trash"></i>
+                  <i class="fa-regular fa-trash-can"></i>
                 </button>
               </div>
             </td>
           </tr>
         } @empty {
-          <tr>
-            <td colspan="8" class="p-12 text-center text-neutral-400">
-              <i class="fa-solid fa-wheat-awn mb-2 block text-3xl"></i>No ingredients found
-            </td>
-          </tr>
+          @if (!loading()) {
+            <tr>
+              <td colspan="5" class="px-5 py-12 text-center">
+                <div class="flex flex-col items-center gap-2">
+                  <i class="fa-solid fa-wheat-awn text-3xl text-neutral-300"></i>
+                  <p class="font-medium text-neutral-600">No ingredients found</p>
+                  <p class="text-sm text-neutral-400">Try changing your search or filters.</p>
+                </div>
+              </td>
+            </tr>
+          }
         }
       </tbody>
     </table>
   </div>
+
+  <!-- Footer / pagination -->
+  <div class="flex items-center justify-between border-t border-neutral-200 px-5 py-3">
+    <span class="text-sm text-neutral-500"
+      >Showing {{ paged().length }} of {{ filtered().length }} ingredients</span
+    >
+    <div class="flex overflow-hidden rounded-md border border-neutral-200 text-[15px]">
+      <button
+        type="button"
+        class="bg-neutral-200 px-3.5 py-1.5 text-neutral-600"
+        [disabled]="page() === 1"
+        (click)="goTo(page() - 1)"
+      >
+        Previous
+      </button>
+      @for (n of pages(); track n) {
+        <button
+          type="button"
+          class="border-l border-neutral-200 px-3.5 py-1.5"
+          [class]="
+            n === page()
+              ? 'bg-[#e95f37] text-white'
+              : 'bg-white text-neutral-700 hover:bg-neutral-100'
+          "
+          (click)="goTo(n)"
+        >
+          {{ n }}
+        </button>
+      }
+      <button
+        type="button"
+        class="border-l border-neutral-200 bg-white px-3.5 py-1.5 text-neutral-700 hover:bg-neutral-100"
+        [disabled]="page() === pageCount()"
+        (click)="goTo(page() + 1)"
+      >
+        Next
+      </button>
+    </div>
+  </div>
 </div>
 
 <app-ingredient-drawer
-  [open]="showForm()"
-  [item]="editing()"
-  (closed)="showForm.set(false)"
-  (saved)="save($event)"
+  [open]="showDrawer()"
+  [ingredient]="editing()"
+  [saving]="saving()"
+  [error]="saveError()"
+  (closed)="closeDrawer()"
+  (saved)="onSaved($event)"
 />
-
+<app-ingredient-stock-dialog
+  [open]="!!stockTarget()"
+  [ingredient]="stockTarget()"
+  [saving]="saving()"
+  [error]="stockError()"
+  (closed)="closeStock()"
+  (submitted)="onStockSubmitted($event)"
+/>
 <app-confirm-dialog
   [open]="!!toDelete()"
-  title="Remove ingredient"
-  [message]="'Remove ' + toDelete()?.name + '?'"
-  confirmLabel="Remove"
+  title="Delete ingredient"
+  [message]="'Are you sure you want to delete ' + toDelete()?.name + '? This cannot be undone.'"
   (confirmed)="confirmDelete()"
   (cancelled)="toDelete.set(null)"
 />
