@@ -12,14 +12,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  AbstractControl,
-  FormArray,
-  FormGroup,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AddonApiService } from '../../../../../../../libs/api/addon/addon.service';
 import { ProductPayload } from '../../../../../../../libs/models/product/product-request.model';
@@ -41,32 +34,26 @@ export class ProductDrawer {
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  // Inputs (parent controls saving + server error)
   readonly open = input(false);
   readonly product = input<ProductResponse | null>(null);
   readonly categories = input<{ id: number; name: string }[]>([]);
   readonly saving = input(false);
   readonly error = input<string | null>(null);
 
-  // Outputs
   readonly closed = output<void>();
   readonly saved = output<ProductPayload>();
 
-  // Slide-in animation state
   protected readonly mounted = signal(false);
   protected readonly shown = signal(false);
 
-  // Add-ons
   protected readonly addons = signal<AddonResponse[]>([]);
   protected readonly addonsLoading = signal(false);
   protected readonly addonsError = signal('');
 
-  // Image
   protected readonly selectedImage = signal<File | null>(null);
   protected readonly imagePreview = signal<string | null>(null);
   private imageObjectUrl: string | null = null;
 
-  // Local validation message
   protected readonly formError = signal('');
 
   protected readonly form = this.fb.group({
@@ -79,16 +66,17 @@ export class ProductDrawer {
     variants: this.fb.array([this.createVariant()]),
   });
 
-  protected get variants(): FormArray {
+  // No explicit type: keep the inferred typed FormArray<FormGroup<...>>
+  // so [formGroup]="v" compiles in the template.
+  protected get variants() {
     return this.form.controls.variants;
   }
 
-  protected get addonIds(): FormArray {
+  protected get addonIds() {
     return this.form.controls.addonIds;
   }
 
   constructor() {
-    // Render above everything, outside the page layout
     this.doc.body.appendChild(this.host.nativeElement);
     this.destroyRef.onDestroy(() => {
       this.revokePreview();
@@ -97,8 +85,6 @@ export class ProductDrawer {
 
     this.loadAddons();
 
-    // Keep the template in sync with form state (needed when zoneless) and
-    // drop the stale banner as soon as the user edits something.
     this.form.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       if (this.formError() && this.form.valid) {
         this.formError.set('');
@@ -127,6 +113,7 @@ export class ProductDrawer {
 
   private createVariant(variant?: VariantRequest) {
     return this.fb.group({
+      id: this.fb.control<number | null>(variant?.id ?? null),
       name: [variant?.name ?? '', [Validators.required, Validators.maxLength(80)]],
       price: [Number(variant?.price ?? 0), [Validators.required, Validators.min(0.01)]],
       sku: [variant?.sku ?? '', [Validators.required, Validators.maxLength(80)]],
@@ -135,10 +122,14 @@ export class ProductDrawer {
 
   protected addVariant(): void {
     this.variants.push(this.createVariant());
+    this.cdr.markForCheck();
   }
 
   protected removeVariant(index: number): void {
-    if (this.variants.length > 1) this.variants.removeAt(index);
+    if (this.variants.length <= 1) return;
+    this.variants.removeAt(index);
+    this.form.markAsDirty();
+    this.cdr.markForCheck();
   }
 
   // ---------- Add-ons ----------
@@ -194,7 +185,9 @@ export class ProductDrawer {
 
     if (product?.variants?.length) {
       for (const v of product.variants) {
-        this.variants.push(this.createVariant({ name: v.name, price: v.price, sku: v.sku }));
+        this.variants.push(
+          this.createVariant({ id: v.id, name: v.name, price: v.price, sku: v.sku }),
+        );
       }
     } else {
       this.variants.push(this.createVariant());
@@ -233,7 +226,6 @@ export class ProductDrawer {
     this.imagePreview.set(this.imageObjectUrl);
   }
 
-  /** Clear the picked/current image. */
   protected removeImage(e: Event): void {
     e.preventDefault();
     e.stopPropagation();
@@ -259,23 +251,10 @@ export class ProductDrawer {
     if (this.open()) this.requestClose();
   }
 
-  /** Debug helper: lists every invalid control with its errors and value. */
-  private invalidPaths(control: AbstractControl, path = ''): string[] {
-    if (control instanceof FormGroup || control instanceof FormArray) {
-      return Object.entries(control.controls).flatMap(([key, child]) =>
-        this.invalidPaths(child, path ? `${path}.${key}` : key),
-      );
-    }
-    return control.invalid
-      ? [`${path} -> ${JSON.stringify(control.errors)} (value: ${JSON.stringify(control.value)})`]
-      : [];
-  }
-
   protected submit(): void {
     if (this.saving()) return;
 
     if (this.form.invalid) {
-      console.warn('Invalid controls:', this.invalidPaths(this.form)); // remove when fixed
       this.form.markAllAsTouched();
       this.formError.set(
         this.variants.invalid
@@ -292,6 +271,7 @@ export class ProductDrawer {
     }
 
     const variants: VariantRequest[] = raw.variants.map((v) => ({
+      ...(v.id != null ? { id: v.id } : {}),
       name: v.name.trim(),
       price: Number(v.price),
       sku: v.sku.trim(),
@@ -302,10 +282,15 @@ export class ProductDrawer {
       return;
     }
 
+    const skus = variants.map((v) => v.sku.toLowerCase());
+    if (new Set(skus).size !== skus.length) {
+      this.formError.set('Two variants have the same SKU.');
+      return;
+    }
+
     const payload: ProductPayload = {
       name: raw.name.trim(),
       description: raw.description.trim(),
-      // image removed and nothing new picked -> empty string so the backend can clear it
       imageUrl: this.imagePreview() === null ? '' : (this.product()?.imageUrl ?? ''),
       imageFile: this.selectedImage(),
       categoryId: raw.categoryId,

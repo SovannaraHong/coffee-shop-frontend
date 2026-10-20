@@ -13,6 +13,7 @@ import {
   AddonIngredientInput,
 } from '../../../../../../../libs/models/addon-ingredient/addon-ingredient';
 import { Ingredient } from '../../../../../../../libs/models/ingredient/ingredient';
+import { IngredientResponse } from '../../../../../../../libs/models/ingredient/ingredient-response';
 
 function errorMessage(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
@@ -32,7 +33,7 @@ function errorMessage(err: unknown): string {
 
 @Component({
   selector: 'app-addon-ingredient-list',
-  imports: [DatePipe, DecimalPipe, RouterLink, PageHeader, ConfirmDialog, AddonIngredientDrawer],
+  imports: [DatePipe, DecimalPipe, RouterLink, PageHeader, ConfirmDialog],
   templateUrl: './addon-ingredient-list.html',
 })
 export class AddonIngredientList {
@@ -63,7 +64,10 @@ export class AddonIngredientList {
   );
 
   private readonly ingredientsById = computed(
-    () => new Map<number, Ingredient>(this.ingredientService.items().map((i) => [i.id, i])),
+    () =>
+      new Map<number, IngredientResponse>(
+        this.ingredientService.items().map((i): [number, IngredientResponse] => [i.id, i]),
+      ),
   );
 
   /** Ingredients that can still be assigned (the one being edited is always kept) */

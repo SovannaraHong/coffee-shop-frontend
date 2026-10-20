@@ -1,0 +1,146 @@
+@if (open() && ingredient(); as item) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+    (click)="close()"
+  >
+    <section
+      class="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="stock-dialog-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
+        <div>
+          <h2 id="stock-dialog-title" class="text-lg font-semibold text-[#2b1d14]">Update stock</h2>
+          <p class="mt-1 text-xs text-neutral-400">{{ item.name }}</p>
+        </div>
+        <button
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
+          aria-label="Close"
+          (click)="close()"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-5 p-6">
+        <div class="rounded-xl bg-[#faf8f5] p-4">
+          <p class="text-xs text-neutral-500">Current stock</p>
+          <p class="mt-1 text-xl font-semibold text-[#2b1d14]">
+            {{ current() | number: '1.0-2' }} {{ item.unit }}
+          </p>
+        </div>
+
+        <!-- Mode -->
+        <div class="inline-flex w-full rounded-xl bg-neutral-100 p-1 text-sm">
+          @for (m of modes; track m.value) {
+            <button
+              type="button"
+              class="flex-1 rounded-lg px-3 py-1.5 font-medium transition-colors"
+              [class]="
+                mode() === m.value
+                  ? 'bg-white text-neutral-900 shadow-sm'
+                  : 'text-neutral-500 hover:text-neutral-700'
+              "
+              (click)="mode.set(m.value)"
+            >
+              {{ m.label }}
+            </button>
+          }
+        </div>
+
+        <!-- Amount -->
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-neutral-700">
+            {{ mode() === 'set' ? 'New stock' : 'Quantity' }}
+          </span>
+          <div class="relative">
+            <input
+              type="number"
+              min="0"
+              step="any"
+              placeholder="0"
+              class="h-[42px] w-full rounded-lg border border-neutral-200 bg-white pl-3 pr-12 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+              [value]="amount()"
+              (input)="amount.set($any($event.target).value)"
+            />
+            <span
+              class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+            >
+              {{ item.unit }}
+            </span>
+          </div>
+        </label>
+
+        <!-- Reason (add / remove only, required by the backend) -->
+        @if (mode() !== 'set') {
+          <label class="block">
+            <span class="mb-1 block text-sm font-medium text-neutral-700">Reason</span>
+            <select
+              class="h-[42px] w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-[#e95f37]"
+              (change)="reason.set($any($event.target).value)"
+            >
+              @for (r of reasons; track r.value) {
+                <option [value]="r.value" [selected]="r.value === reason()">{{ r.label }}</option>
+              }
+            </select>
+          </label>
+        }
+
+        <!-- Notes (required when setting an exact value) -->
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-neutral-700">
+            Notes {{ mode() === 'set' ? '' : '(optional)' }}
+          </span>
+          <textarea
+            rows="2"
+            maxlength="255"
+            [placeholder]="
+              mode() === 'set' ? 'Why are you correcting the stock?' : 'e.g. Delivery from supplier'
+            "
+            class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+            [value]="notes()"
+            (input)="notes.set($any($event.target).value)"
+          ></textarea>
+        </label>
+
+        @if (preview() !== null && !problem()) {
+          <p class="text-sm text-neutral-500">
+            New stock will be
+            <span class="font-semibold text-[#2b1d14]"
+              >{{ preview() | number: '1.0-2' }} {{ item.unit }}</span
+            >
+          </p>
+        }
+
+        @if (triedSubmit() && problem(); as msg) {
+          <p class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ msg }}</p>
+        }
+        @if (error(); as err) {
+          <p class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ err }}</p>
+        }
+      </div>
+
+      <div class="flex justify-end gap-2 border-t border-neutral-100 px-6 py-4">
+        <button
+          type="button"
+          class="h-[42px] rounded-lg border border-neutral-200 bg-white px-5 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+          [disabled]="saving()"
+          (click)="close()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="h-[42px] rounded-lg bg-[#e95f37] px-5 text-sm font-medium text-white hover:bg-[#d4532e] disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="saving()"
+          (click)="save()"
+        >
+          {{ saving() ? 'Saving…' : 'Update stock' }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

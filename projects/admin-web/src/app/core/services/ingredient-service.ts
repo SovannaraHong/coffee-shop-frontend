@@ -1,103 +1,94 @@
-import { Injectable, signal } from '@angular/core';
-import { Ingredient, IngredientInput } from '../../../../../../libs/models/ingredient/ingredient';
+import { IngredientApiService } from './../../../../../../libs/api/ingredient/ingredient.service';
+import { inject, Injectable, signal } from '@angular/core';
+import { firstValueFrom, Observable } from 'rxjs';
+import { IngredientResponse } from '../../../../../../libs/models/ingredient/ingredient-response';
+import {
+  IngredientCreateRequest,
+  IngredientUpdateRequest,
+  StockAdjustRequest,
+  StockSetRequest,
+} from '../../../../../../libs/models/ingredient/ingredient-request';
 
-// Sample data. Swap this service for HttpClient calls when your API is ready.
-const SEED: Ingredient[] = [
-  {
-    id: 1,
-    name: 'Espresso beans',
-    unit: 'kg',
-    quantityInStock: 18,
-    reorderLevel: 10,
-    isActive: true,
-    createdAt: '2026-09-01T08:00:00',
-    updatedAt: null,
-    createdBy: 'Alex Morgan',
-    updatedBy: null,
-  },
-  {
-    id: 2,
-    name: 'Whole milk',
-    unit: 'L',
-    quantityInStock: 24,
-    reorderLevel: 30,
-    isActive: true,
-    createdAt: '2026-09-01T08:05:00',
-    updatedAt: '2026-10-16T08:12:00',
-    createdBy: 'Alex Morgan',
-    updatedBy: 'Alex Morgan',
-  },
-  {
-    id: 3,
-    name: 'Caramel syrup',
-    unit: 'ml',
-    quantityInStock: 800,
-    reorderLevel: 1000,
-    isActive: true,
-    createdAt: '2026-09-02T09:10:00',
-    updatedAt: null,
-    createdBy: 'Alex Morgan',
-    updatedBy: null,
-  },
-  {
-    id: 4,
-    name: 'Paper cups 12oz',
-    unit: 'pcs',
-    quantityInStock: 640,
-    reorderLevel: 300,
-    isActive: true,
-    createdAt: '2026-09-03T10:00:00',
-    updatedAt: null,
-    createdBy: 'Sok Dara',
-    updatedBy: null,
-  },
-  {
-    id: 5,
-    name: 'Oat milk',
-    unit: 'L',
-    quantityInStock: 12,
-    reorderLevel: 8,
-    isActive: false,
-    createdAt: '2026-09-05T11:30:00',
-    updatedAt: '2026-10-07T08:45:00',
-    createdBy: 'Alex Morgan',
-    updatedBy: 'Sok Dara',
-  },
-];
-
-const CURRENT_USER = 'Admin'; // TODO: replace with your logged-in user
-
+/** State + signals for the ingredient page. All HTTP lives in IngredientApiService. */
 @Injectable({ providedIn: 'root' })
 export class IngredientService {
-  private readonly data = signal<Ingredient[]>(SEED);
-  readonly items = this.data.asReadonly();
+  private readonly api = inject(IngredientApiService);
 
-  add(v: IngredientInput): void {
-    this.data.update((list) => {
-      const id = Math.max(0, ...list.map((x) => x.id)) + 1;
-      const created: Ingredient = {
-        ...v,
-        id,
-        createdAt: new Date().toISOString(),
-        updatedAt: null,
-        createdBy: CURRENT_USER,
-        updatedBy: null,
-      };
-      return [created, ...list];
+  private readonly _items = signal<IngredientResponse[]>([]);
+  private readonly _loading = signal(false);
+  private readonly _saving = signal(false);
+  private readonly _error = signal<string | null>(null);
+
+  readonly items = this._items.asReadonly();
+  readonly loading = this._loading.asReadonly();
+  readonly saving = this._saving.asReadonly();
+  readonly error = this._error.asReadonly();
+
+  async load(): Promise<void> {
+    this._loading.set(true);
+    this._error.set(null);
+    try {
+      this._items.set(await firstValueFrom(this.api.getAllIngredients()));
+    } catch {
+      this._error.set('Could not load ingredients.');
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  async add(request: IngredientCreateRequest): Promise<boolean> {
+    return this.run(async () => {
+      const created = await firstValueFrom(this.api.createIngredient(request));
+      this._items.update((list) => [...list, created]);
     });
   }
 
-  update(id: number, v: IngredientInput): void {
-    this.data.update((list) =>
-      list.map((x) =>
-        x.id === id
-          ? { ...x, ...v, updatedAt: new Date().toISOString(), updatedBy: CURRENT_USER }
-          : x,
-      ),
+  async update(id: number, request: IngredientUpdateRequest): Promise<boolean> {
+    return this.replaceWith(this.api.updateIngredient(id, request));
+  }
+
+  async remove(id: number): Promise<boolean> {
+    return this.run(async () => {
+      await firstValueFrom(this.api.deleteIngredient(id));
+      this._items.update((list) => list.filter((i) => i.id !== id));
+    });
+  }
+
+  async setActive(id: number, active: boolean): Promise<boolean> {
+    return this.replaceWith(
+      active ? this.api.enableIngredient(id) : this.api.disableIngredient(id),
     );
   }
 
-  remove(id: number): void {
-    this.data.update((list) => list.filter((x) => x.id !== id));
+  async increaseStock(id: number, request: StockAdjustRequest): Promise<boolean> {
+    return this.replaceWith(this.api.incrementStock(id, request));
+  }
+
+  async decreaseStock(id: number, request: StockAdjustRequest): Promise<boolean> {
+    return this.replaceWith(this.api.decrementStock(id, request));
+  }
+
+  async setStock(id: number, request: StockSetRequest): Promise<boolean> {
+    return this.replaceWith(this.api.adjustStock(id, request));
+  }
+
+  // helpers
+  private replaceWith(request$: Observable<IngredientResponse>): Promise<boolean> {
+    return this.run(async () => {
+      const updated = await firstValueFrom(request$);
+      this._items.update((list) => list.map((i) => (i.id === updated.id ? updated : i)));
+    });
+  }
+
+  private async run(action: () => Promise<void>): Promise<boolean> {
+    this._saving.set(true);
+    try {
+      await action();
+      return true;
+    } catch {
+      return false;
+    } finally {
+      this._saving.set(false);
+    }
   }
 }

@@ -1,0 +1,191 @@
+@if (open()) {
+  <div class="fixed inset-0 z-50 flex justify-end bg-black/40" (click)="close()">
+    <aside
+      class="flex h-full w-full max-w-xl flex-col bg-white shadow-2xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="recipe-drawer-title"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
+        <div>
+          <h2 id="recipe-drawer-title" class="text-lg font-semibold text-[#2b1d14]">
+            {{ isEdit() ? 'Edit recipe' : 'Add recipe' }}
+          </h2>
+          <p class="mt-1 text-xs text-neutral-400">
+            Set how much of each ingredient one serving of this size uses.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100"
+          aria-label="Close"
+          (click)="close()"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="flex-1 space-y-6 overflow-y-auto p-6">
+        <!-- Product + size -->
+        @if (isEdit()) {
+          <div class="rounded-xl bg-[#faf8f5] p-4">
+            <p class="text-xs text-neutral-500">Recipe for</p>
+            <p class="mt-1 font-semibold text-[#2b1d14]">
+              {{ recipe()?.productName }}
+              <span class="font-normal text-neutral-500">· {{ recipe()?.productVariantName }}</span>
+            </p>
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium text-neutral-700">Product</span>
+              <select
+                class="h-[42px] w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-[#e95f37]"
+                (change)="onProductChange($any($event.target).value)"
+              >
+                <option value="0" [selected]="productId() === 0">Select product…</option>
+                @for (p of products(); track p.id) {
+                  <option [value]="p.id" [selected]="p.id === productId()">{{ p.name }}</option>
+                }
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="mb-1 block text-sm font-medium text-neutral-700">Size / variant</span>
+              <select
+                class="h-[42px] w-full rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-[#e95f37] disabled:bg-neutral-50 disabled:text-neutral-400"
+                [disabled]="productId() === 0"
+                (change)="onVariantChange($any($event.target).value)"
+              >
+                <option value="0" [selected]="variantId() === 0">Select size…</option>
+                @for (v of variants(); track v.id) {
+                  <option
+                    [value]="v.id"
+                    [selected]="v.id === variantId()"
+                    [disabled]="isTaken(v.id)"
+                  >
+                    {{ v.name }}{{ isTaken(v.id) ? ' (already has recipe)' : '' }}
+                  </option>
+                }
+              </select>
+            </label>
+          </div>
+        }
+
+        <!-- Ingredients -->
+        <div>
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-sm font-semibold text-[#2b1d14]">Ingredients</p>
+            <button
+              type="button"
+              class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-[#e95f37] hover:bg-orange-50"
+              (click)="addRow()"
+            >
+              <i class="fa-solid fa-plus text-xs"></i> Add ingredient
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            @for (row of rows(); track $index) {
+              <div class="flex items-center gap-2">
+                <select
+                  class="h-[42px] min-w-0 flex-1 rounded-lg border border-neutral-200 bg-white px-3 text-sm outline-none focus:border-[#e95f37]"
+                  aria-label="Ingredient"
+                  (change)="setRowIngredient($index, $any($event.target).value)"
+                >
+                  <option value="0" [selected]="row.ingredientId === 0">Select ingredient…</option>
+                  @for (i of ingredients(); track i.id) {
+                    <option
+                      [value]="i.id"
+                      [selected]="i.id === row.ingredientId"
+                      [disabled]="pickedElsewhere(i.id, $index)"
+                    >
+                      {{ i.name }}
+                    </option>
+                  }
+                </select>
+
+                <div class="relative w-32">
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="any"
+                    placeholder="Qty"
+                    aria-label="Quantity"
+                    class="h-[42px] w-full rounded-lg border border-neutral-200 bg-white pl-3 pr-10 text-sm outline-none focus:border-[#e95f37]"
+                    [value]="row.quantity"
+                    (input)="setRowQuantity($index, $any($event.target).value)"
+                  />
+                  <span
+                    class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+                  >
+                    {{ unitOf(row.ingredientId) }}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-neutral-400 hover:bg-red-50 hover:text-red-600"
+                  aria-label="Remove ingredient"
+                  (click)="removeRow($index)"
+                >
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+              </div>
+            } @empty {
+              <p
+                class="rounded-lg border border-dashed border-neutral-200 p-4 text-center text-sm text-neutral-400"
+              >
+                No ingredients yet.
+              </p>
+            }
+          </div>
+        </div>
+
+        <!-- Instructions -->
+        <label class="block">
+          <span class="mb-1 block text-sm font-medium text-neutral-700"
+            >Instructions (optional)</span
+          >
+          <textarea
+            rows="4"
+            placeholder="e.g. Steep for 3 minutes, then add ice."
+            class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+            [value]="instructions()"
+            (input)="instructions.set($any($event.target).value)"
+          ></textarea>
+        </label>
+
+        @if (submitted() && formError(); as msg) {
+          <p class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ msg }}</p>
+        }
+        @if (error(); as err) {
+          <p class="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{{ err }}</p>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="flex justify-end gap-2 border-t border-neutral-100 px-6 py-4">
+        <button
+          type="button"
+          class="h-[42px] rounded-lg border border-neutral-200 bg-white px-5 text-sm text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+          [disabled]="saving()"
+          (click)="close()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="h-[42px] rounded-lg bg-[#e95f37] px-5 text-sm font-medium text-white hover:bg-[#d4532e] disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="saving()"
+          (click)="save()"
+        >
+          {{ saving() ? 'Saving…' : isEdit() ? 'Save changes' : 'Create recipe' }}
+        </button>
+      </div>
+    </aside>
+  </div>
+}

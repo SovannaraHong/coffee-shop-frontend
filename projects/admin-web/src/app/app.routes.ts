@@ -43,6 +43,12 @@ export const routes: Routes = [
           import('./features/categories/category-list/category-list').then((m) => m.CategoryList),
       },
       {
+        path: 'recipe',
+        loadComponent: () =>
+          import('./features/recipe/recipe-list/recipe-list').then((m) => m.RecipeList),
+      },
+
+      {
         path: 'inventory',
         loadComponent: () =>
           import('./features/inventory/inventory-list/inventory-list').then((m) => m.InventoryList),
