@@ -1,5 +1,9 @@
 @if (mounted()) {
-  <div class="fixed inset-0 z-[100]" [class.pointer-events-none]="!open()">
+  <div
+    class="fixed inset-0 z-[100]"
+    [class.pointer-events-none]="!open()"
+    (keydown.escape)="closed.emit()"
+  >
     <!-- Backdrop -->
     <div
       class="absolute inset-0 bg-neutral-900/40 backdrop-blur-[2px] transition-opacity duration-300"
@@ -9,7 +13,7 @@
 
     <!-- Panel -->
     <aside
-      class="absolute right-0 top-0 flex h-full flex-col bg-white shadow-2xl"
+      class="absolute right-0 top-0 flex h-full flex-col bg-neutral-50 shadow-2xl"
       style="
         width: min(720px, 100vw);
         transform: translateX(100%);
@@ -25,16 +29,23 @@
       aria-label="Staff form"
     >
       <!-- Header -->
-      <div class="flex items-center justify-between border-b border-neutral-200 px-8 py-5">
-        <div>
-          <h2 class="text-xl font-medium text-neutral-900">
+      <div class="flex items-center gap-4 border-b border-neutral-200 bg-white px-8 py-5">
+        <div
+          class="grid size-11 shrink-0 place-items-center rounded-xl bg-orange-50 text-lg text-[#e95f37]"
+        >
+          <i [class]="staff() ? 'fa-solid fa-user-pen' : 'fa-solid fa-user-plus'"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h2 class="truncate text-lg font-semibold text-neutral-900">
             {{ staff() ? 'Edit staff member' : 'Add staff member' }}
           </h2>
-          <p class="mt-0.5 text-sm text-neutral-500">Contact details, role and shift</p>
+          <p class="text-sm text-neutral-500">
+            {{ staff() ? 'Update photo, name, role and status' : 'Fill in the details below' }}
+          </p>
         </div>
         <button
           type="button"
-          class="grid size-9 place-items-center rounded-lg bg-neutral-100 text-neutral-600 transition hover:bg-neutral-200"
+          class="grid size-9 shrink-0 place-items-center rounded-lg text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
           aria-label="Close"
           (click)="closed.emit()"
         >
@@ -48,138 +59,232 @@
         (ngSubmit)="submit()"
         novalidate
         id="staffForm"
-        class="flex-1 space-y-6 overflow-y-auto px-8 py-6"
+        class="flex-1 space-y-5 overflow-y-auto px-8 py-6"
       >
-        <!-- Name -->
-        <div>
-          <label for="st-name" class="mb-1.5 block text-sm font-medium text-neutral-700"
-            >Full name</label
+        @if (error(); as err) {
+          <div
+            class="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
           >
-          <div class="relative">
-            <i
-              class="fa-regular fa-user pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
-            ></i>
+            <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+            <span>{{ err }}</span>
+          </div>
+        }
+
+        <!-- Photo card -->
+        <section class="rounded-2xl border border-neutral-200 bg-white p-5">
+          <div class="flex items-center gap-5">
+            <label for="st-avatar" class="group relative shrink-0 cursor-pointer">
+              @if (previewUrl(); as url) {
+                <img
+                  [src]="url"
+                  alt="Avatar preview"
+                  class="size-24 rounded-full object-cover ring-4 ring-orange-50"
+                />
+              } @else {
+                <div
+                  class="grid size-24 place-items-center rounded-full bg-orange-100 text-2xl font-semibold text-[#e95f37] ring-4 ring-orange-50"
+                >
+                  {{ initials() }}
+                </div>
+              }
+              <span
+                class="absolute inset-0 grid place-items-center rounded-full bg-neutral-900/50 text-white opacity-0 transition group-hover:opacity-100"
+              >
+                <i class="fa-solid fa-camera"></i>
+              </span>
+              <span
+                class="absolute -bottom-0.5 -right-0.5 grid size-8 place-items-center rounded-full border-2 border-white bg-[#e95f37] text-xs text-white shadow"
+              >
+                <i class="fa-solid fa-camera"></i>
+              </span>
+            </label>
+
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-neutral-900">Profile photo</p>
+              <p class="mt-0.5 text-xs text-neutral-500">JPG, PNG or WebP, up to 2 MB.</p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <label
+                  for="st-avatar"
+                  class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+                >
+                  <i class="fa-solid fa-arrow-up-from-bracket text-xs"></i>
+                  {{ previewUrl() ? 'Change' : 'Upload' }}
+                </label>
+                @if (imageFile()) {
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-neutral-500 transition hover:bg-neutral-100"
+                    (click)="removeNewImage()"
+                  >
+                    <i class="fa-solid fa-rotate-left text-xs"></i> Undo
+                  </button>
+                }
+              </div>
+              @if (imageError(); as ie) {
+                <p class="mt-2 text-xs text-red-500">
+                  <i class="fa-solid fa-circle-exclamation mr-1"></i>{{ ie }}
+                </p>
+              }
+            </div>
             <input
-              id="st-name"
-              formControlName="name"
-              placeholder="e.g. Sok Dara"
-              class="h-[42px] w-full rounded-md border border-neutral-200 pl-9 pr-3.5 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
+              id="st-avatar"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              class="hidden"
+              (change)="onFile($event)"
             />
           </div>
-          @if (form.controls.name.touched && form.controls.name.invalid) {
-            <p class="mt-1 text-xs text-red-500">Name is required.</p>
-          }
-        </div>
+        </section>
 
-        <!-- Email + phone -->
-        <div class="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label for="st-email" class="mb-1.5 block text-sm font-medium text-neutral-700"
-              >Email</label
-            >
-            <div class="relative">
-              <i
-                class="fa-regular fa-envelope pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
-              ></i>
-              <input
-                id="st-email"
-                type="email"
-                formControlName="email"
-                placeholder="name@brewly.example"
-                class="h-[42px] w-full rounded-md border border-neutral-200 pl-9 pr-3.5 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
-              />
+        <!-- Details card -->
+        <section class="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h3 class="mb-4 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+            Details
+          </h3>
+
+          <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <!-- Name -->
+            <div>
+              <label for="st-name" class="mb-1.5 block text-sm font-medium text-neutral-700">
+                Full name <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <i
+                  class="fa-regular fa-user pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-neutral-400"
+                ></i>
+                <input
+                  id="st-name"
+                  formControlName="fullName"
+                  autocomplete="off"
+                  placeholder="e.g. Sok Dara"
+                  [attr.aria-invalid]="
+                    form.controls.fullName.touched && form.controls.fullName.invalid
+                  "
+                  class="h-11 w-full rounded-lg border bg-white pl-10 pr-3.5 text-[15px] outline-none transition placeholder:text-neutral-400 focus:border-[#e95f37] focus:ring-4 focus:ring-[#e95f37]/15"
+                  [class]="
+                    form.controls.fullName.touched && form.controls.fullName.invalid
+                      ? 'border-red-400'
+                      : 'border-neutral-200'
+                  "
+                />
+              </div>
+              @if (form.controls.fullName.touched && form.controls.fullName.invalid) {
+                <p class="mt-1.5 text-xs text-red-500">Please enter the staff member's name.</p>
+              }
             </div>
-            @if (form.controls.email.touched && form.controls.email.invalid) {
-              <p class="mt-1 text-xs text-red-500">Enter a valid email.</p>
-            }
-          </div>
-          <div>
-            <label for="st-phone" class="mb-1.5 block text-sm font-medium text-neutral-700"
-              >Phone</label
-            >
-            <div class="relative">
-              <i
-                class="fa-solid fa-phone pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
-              ></i>
-              <input
-                id="st-phone"
-                formControlName="phone"
-                placeholder="e.g. 012 345 678"
-                class="h-[42px] w-full rounded-md border border-neutral-200 pl-9 pr-3.5 text-[15px] outline-none placeholder:text-neutral-400 focus:border-[#e95f37]"
-              />
+
+            <!-- Email -->
+            <div>
+              <label for="st-email" class="mb-1.5 block text-sm font-medium text-neutral-700">
+                Email <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <i
+                  class="fa-regular fa-envelope pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-neutral-400"
+                ></i>
+                <input
+                  id="st-email"
+                  type="email"
+                  formControlName="email"
+                  autocomplete="off"
+                  placeholder="name@example.com"
+                  [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+                  class="h-11 w-full rounded-lg border bg-white pl-10 pr-3.5 text-[15px] outline-none transition placeholder:text-neutral-400 focus:border-[#e95f37] focus:ring-4 focus:ring-[#e95f37]/15 disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500"
+                  [class]="
+                    form.controls.email.touched && form.controls.email.invalid
+                      ? 'border-red-400'
+                      : 'border-neutral-200'
+                  "
+                />
+              </div>
+              @if (form.controls.email.touched && form.controls.email.invalid) {
+                <p class="mt-1.5 text-xs text-red-500">
+                  Enter a valid email, like name&#64;example.com.
+                </p>
+              } @else if (!staff()) {
+                <p class="mt-1.5 text-xs text-neutral-500">
+                  <i class="fa-regular fa-paper-plane mr-1"></i>An invitation will be sent to this
+                  email.
+                </p>
+              }
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- Role -->
-        <div>
-          <span class="mb-2 block text-sm font-medium text-neutral-700">Role</span>
-          <div class="flex flex-wrap gap-2">
-            @for (r of roles; track r) {
+        <!-- Role card -->
+        <section class="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h3 class="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-400">Role</h3>
+          <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3" role="radiogroup" aria-label="Role">
+            @for (r of roles(); track r.id) {
               <button
                 type="button"
-                class="rounded-lg border px-4 py-2 text-sm font-medium capitalize transition-colors"
+                role="radio"
+                [attr.aria-checked]="form.controls.roleId.value === r.id"
+                class="flex items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm font-medium capitalize transition"
                 [class]="
-                  form.controls.role.value === r
-                    ? 'border-[#e95f37] bg-[#e95f37]/10 text-[#e95f37]'
-                    : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                  form.controls.roleId.value === r.id
+                    ? 'border-[#e95f37] bg-[#e95f37]/10 text-[#e95f37] ring-2 ring-[#e95f37]/20'
+                    : 'border-neutral-200 text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50'
                 "
-                (click)="setRole(r)"
+                (click)="setRole(r.id)"
               >
-                {{ r }}
+                <span class="truncate">{{ r.name.toLowerCase() }}</span>
+                <span
+                  class="grid size-5 shrink-0 place-items-center rounded-full border text-[10px] transition"
+                  [class]="
+                    form.controls.roleId.value === r.id
+                      ? 'border-[#e95f37] bg-[#e95f37] text-white'
+                      : 'border-neutral-300 text-transparent'
+                  "
+                >
+                  <i class="fa-solid fa-check"></i>
+                </span>
               </button>
             }
           </div>
-        </div>
+        </section>
 
-        <!-- Shift -->
-        <div>
-          <span class="mb-2 block text-sm font-medium text-neutral-700">Shift</span>
-          <div class="flex flex-wrap gap-2">
-            @for (s of shifts; track s) {
-              <button
-                type="button"
-                class="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium capitalize transition-colors"
-                [class]="
-                  form.controls.shift.value === s
-                    ? 'border-[#e95f37] bg-[#e95f37]/10 text-[#e95f37]'
-                    : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                "
-                (click)="setShift(s)"
-              >
-                <i class="fa-regular fa-clock text-xs"></i>{{ s }}
-              </button>
-            }
-          </div>
-        </div>
-
-        <!-- Status -->
-        <div>
-          <span class="mb-2 block text-sm font-medium text-neutral-700">Status</span>
-          <div class="grid grid-cols-2 gap-3">
-            @for (s of statuses; track s) {
-              <button
-                type="button"
-                class="rounded-xl border px-4 py-3 text-left text-sm font-medium capitalize text-neutral-900 transition-colors"
-                [class]="
-                  form.controls.status.value === s
-                    ? 'border-[#e95f37] bg-[#e95f37]/10'
-                    : 'border-neutral-200 hover:bg-neutral-50'
-                "
-                (click)="setStatus(s)"
-              >
-                {{ s }}
-              </button>
-            }
-          </div>
-        </div>
+        <!-- Status card (edit only) -->
+        @if (staff()) {
+          <section
+            class="flex items-center justify-between gap-4 rounded-2xl border border-neutral-200 bg-white p-5"
+          >
+            <div>
+              <p class="text-sm font-medium text-neutral-900">
+                {{ form.controls.isActive.value ? 'Active' : 'Inactive' }}
+              </p>
+              <p class="mt-0.5 text-xs text-neutral-500">
+                {{
+                  form.controls.isActive.value
+                    ? 'This person can sign in and use the system.'
+                    : 'This person cannot sign in.'
+                }}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              [attr.aria-checked]="form.controls.isActive.value"
+              aria-label="Active status"
+              class="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-[#e95f37]/25"
+              [class]="form.controls.isActive.value ? 'bg-[#e95f37]' : 'bg-neutral-300'"
+              (click)="setActive(!form.controls.isActive.value)"
+            >
+              <span
+                class="inline-block size-5 rounded-full bg-white shadow transition-transform"
+                [class]="form.controls.isActive.value ? 'translate-x-6' : 'translate-x-1'"
+              ></span>
+            </button>
+          </section>
+        }
       </form>
 
       <!-- Footer -->
-      <div class="flex gap-3 border-t border-neutral-200 px-8 py-4">
+      <div class="flex justify-end gap-3 border-t border-neutral-200 bg-white px-8 py-4">
         <button
           type="button"
-          class="h-[42px] flex-1 rounded-md border border-neutral-700 bg-white text-[15px] text-neutral-700 hover:bg-neutral-50"
+          class="h-11 min-w-32 rounded-lg border border-neutral-300 bg-white px-6 text-[15px] font-medium text-neutral-700 transition hover:bg-neutral-50"
           (click)="closed.emit()"
         >
           Cancel
@@ -187,10 +292,15 @@
         <button
           type="submit"
           form="staffForm"
-          class="h-[42px] flex-1 rounded-md bg-[#e95f37] text-[15px] text-white hover:bg-[#d4532e]"
+          [disabled]="saving()"
+          class="h-11 min-w-40 rounded-lg bg-[#e95f37] px-6 text-[15px] font-medium text-white shadow-sm transition hover:bg-[#d4532e] focus-visible:ring-4 focus-visible:ring-[#e95f37]/30 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <i class="fa-solid fa-check mr-1.5 text-xs"></i
-          >{{ staff() ? 'Save changes' : 'Add staff' }}
+          @if (saving()) {
+            <i class="fa-solid fa-spinner fa-spin mr-2 text-xs"></i>Saving…
+          } @else {
+            <i class="fa-solid fa-check mr-2 text-xs"></i
+            >{{ staff() ? 'Save changes' : 'Add staff' }}
+          }
         </button>
       </div>
     </aside>

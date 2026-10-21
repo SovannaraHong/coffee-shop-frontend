@@ -1,118 +1,307 @@
-<app-page-header title="Staff" subtitle="Your team, their roles and shifts">
-  <button type="button" class="btn btn-primary" (click)="openAdd()">
-    <i class="fa-solid fa-user-plus"></i> Add staff
+<app-page-header title="Staff" subtitle="Manage your team, roles and access">
+  <button
+    type="button"
+    class="inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-300"
+    (click)="openAdd()"
+  >
+    <i class="fa-solid fa-user-plus text-xs"></i> Add staff
   </button>
 </app-page-header>
 
-<div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-  <div class="flex gap-1 overflow-x-auto">
-    @for (r of ['all'].concat(roles); track r) {
+<!-- Summary cards (click Active / Inactive to filter) -->
+<div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+  <button
+    type="button"
+    class="flex items-center gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-md"
+    [class]="status() === 'all' ? 'border-sky-300 ring-2 ring-sky-100' : 'border-slate-200'"
+    (click)="status.set('all')"
+  >
+    <div class="grid size-12 place-items-center rounded-xl bg-sky-100 text-sky-600">
+      <i class="fa-solid fa-users text-lg"></i>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-slate-500">Total staff</p>
+      <p class="text-2xl font-semibold text-slate-900">{{ stats().total }}</p>
+    </div>
+  </button>
+
+  <button
+    type="button"
+    class="flex items-center gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-md"
+    [class]="
+      status() === 'active' ? 'border-emerald-300 ring-2 ring-emerald-100' : 'border-slate-200'
+    "
+    (click)="setStatusFilter('active')"
+  >
+    <div class="grid size-12 place-items-center rounded-xl bg-emerald-100 text-emerald-600">
+      <i class="fa-solid fa-user-check text-lg"></i>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-slate-500">Active</p>
+      <p class="text-2xl font-semibold text-slate-900">{{ stats().active }}</p>
+    </div>
+  </button>
+
+  <button
+    type="button"
+    class="flex items-center gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-md"
+    [class]="
+      status() === 'inactive' ? 'border-slate-400 ring-2 ring-slate-200' : 'border-slate-200'
+    "
+    (click)="setStatusFilter('inactive')"
+  >
+    <div class="grid size-12 place-items-center rounded-xl bg-slate-100 text-slate-500">
+      <i class="fa-solid fa-user-slash text-lg"></i>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-slate-500">Inactive</p>
+      <p class="text-2xl font-semibold text-slate-900">{{ stats().inactive }}</p>
+    </div>
+  </button>
+</div>
+
+<!-- Filters -->
+<div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+  <!-- Role tabs -->
+  <div class="flex gap-1.5 overflow-x-auto pb-1">
+    @for (r of tabs(); track r) {
       <button
         type="button"
-        class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition-colors"
+        class="inline-flex items-center gap-2 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium capitalize transition-colors"
         [class]="
           role() === r
-            ? 'bg-primary text-white'
-            : 'bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-100'
+            ? 'bg-sky-500 text-white shadow-sm'
+            : 'border border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700'
         "
         (click)="role.set(r)"
       >
-        {{ r === 'all' ? 'Everyone' : r }}
+        {{ r === 'all' ? 'Everyone' : r.toLowerCase() }}
         <span
           class="rounded-full px-1.5 text-xs"
-          [class]="role() === r ? 'bg-white/25' : 'bg-neutral-100 text-neutral-500'"
+          [class]="role() === r ? 'bg-white/25' : 'bg-slate-100 text-slate-500'"
           >{{ roleCount(r) }}</span
         >
       </button>
     }
   </div>
-  <div class="relative md:w-64">
-    <i
-      class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
-    ></i>
-    <input
-      type="search"
-      class="input pl-9"
-      placeholder="Search staff…"
-      [value]="search()"
-      (input)="search.set($any($event.target).value)"
-    />
+
+  <!-- Search + clear -->
+  <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <div class="relative sm:w-72">
+      <i
+        class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400"
+      ></i>
+      <input
+        type="text"
+        class="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-9 text-sm outline-none placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+        placeholder="Search name or email…"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+        aria-label="Search staff"
+      />
+      @if (search()) {
+        <button
+          type="button"
+          class="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          aria-label="Clear search"
+          (click)="search.set('')"
+        >
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      }
+    </div>
+    @if (hasFilters()) {
+      <button
+        type="button"
+        class="inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-sky-600 hover:bg-sky-50"
+        (click)="clearFilters()"
+      >
+        <i class="fa-solid fa-rotate-left text-xs"></i> Clear filters
+      </button>
+    }
   </div>
 </div>
 
-<div class="card overflow-hidden">
+<!-- Error -->
+@if (service.error()) {
+  <div
+    class="mb-4 flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+  >
+    <span>
+      <i class="fa-solid fa-circle-exclamation mr-2"></i>Something went wrong. Please try again.
+    </span>
+    <button type="button" class="font-medium underline" (click)="service.load()">Retry</button>
+  </div>
+}
+
+<!-- Table -->
+<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
   <div class="overflow-x-auto">
-    <table class="w-full min-w-[860px] text-left text-sm">
-      <thead class="border-b border-neutral-200 bg-neutral-50 text-xs font-medium text-neutral-500">
+    <table class="w-full min-w-[720px] text-left text-sm">
+      <thead
+        class="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500"
+      >
         <tr>
           <th class="px-5 py-3">Staff member</th>
           <th class="px-5 py-3">Role</th>
-          <th class="px-5 py-3">Contact</th>
-          <th class="px-5 py-3">Shift</th>
-          <th class="px-5 py-3">Joined</th>
           <th class="px-5 py-3">Status</th>
           <th class="px-5 py-3 text-right">Actions</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-neutral-100">
-        @for (s of filtered(); track s.id) {
-          <tr class="transition-colors hover:bg-neutral-50">
-            <td class="px-5 py-3">
-              <div class="flex items-center gap-3">
-                <img [src]="s.avatar" [alt]="s.name" class="size-10 rounded-full object-cover" />
-                <span class="font-medium text-neutral-900">{{ s.name }}</span>
-              </div>
-            </td>
-            <td class="px-5 py-3 text-primary">{{ s.role }}</td>
-            <td class="px-5 py-3 text-neutral-600">
-              <div class="flex items-center gap-2">
-                <i class="fa-regular fa-envelope w-4 text-neutral-400"></i>{{ s.email }}
-              </div>
-              <div class="mt-0.5 flex items-center gap-2">
-                <i class="fa-solid fa-phone w-4 text-neutral-400"></i>{{ s.phone || '—' }}
-              </div>
-            </td>
-            <td class="px-5 py-3 text-neutral-600">{{ s.shift }}</td>
-            <td class="whitespace-nowrap px-5 py-3 text-neutral-600">
-              {{ s.joinedAt | date: 'MMM d, y' }}
-            </td>
-            <td class="px-5 py-3"><app-status-badge [status]="s.status" /></td>
-            <td class="px-5 py-3">
-              <div class="flex justify-end gap-1">
-                <button
-                  type="button"
-                  class="btn btn-icon btn-sm btn-light"
-                  aria-label="Edit"
-                  (click)="openEdit(s)"
+      <tbody class="divide-y divide-slate-100">
+        @if (service.loading() && !service.items().length) {
+          @for (n of skeleton; track n) {
+            <tr class="animate-pulse">
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="size-11 rounded-full bg-slate-200"></div>
+                  <div class="space-y-2">
+                    <div class="h-3 w-32 rounded bg-slate-200"></div>
+                    <div class="h-3 w-44 rounded bg-slate-100"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-4"><div class="h-6 w-20 rounded-full bg-slate-200"></div></td>
+              <td class="px-5 py-4"><div class="h-6 w-24 rounded-full bg-slate-200"></div></td>
+              <td class="px-5 py-4"><div class="ml-auto h-8 w-20 rounded bg-slate-100"></div></td>
+            </tr>
+          }
+        } @else {
+          @for (s of filtered(); track s.id) {
+            <tr class="transition-colors hover:bg-sky-50/50" [class.opacity-70]="!s.isActive">
+              <!-- Member -->
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  @if (showImage(s)) {
+                    <img
+                      [src]="s.avatarUrl"
+                      [alt]="s.fullName"
+                      (error)="onImgError(s)"
+                      class="size-11 rounded-full object-cover ring-2 ring-white shadow-sm"
+                    />
+                  } @else {
+                    <div
+                      class="grid size-11 place-items-center rounded-full text-sm font-semibold"
+                      [class]="avatarColor(s.fullName)"
+                    >
+                      {{ initials(s.fullName) }}
+                    </div>
+                  }
+                  <div class="min-w-0">
+                    <p class="truncate font-medium text-slate-900">{{ s.fullName }}</p>
+                    <p class="truncate text-xs text-slate-500">{{ s.email }}</p>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Role -->
+              <td class="px-5 py-3">
+                <span
+                  class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ring-1 ring-inset"
+                  [class]="roleBadge(s.roleName)"
+                  >{{ s.roleName.toLowerCase() }}</span
                 >
-                  <i class="fa-solid fa-pen-to-square"></i>
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-icon btn-sm bg-red-50 text-red-600 hover:bg-red-100"
-                  aria-label="Delete"
-                  (click)="toDelete.set(s)"
+              </td>
+
+              <!-- Status toggle -->
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    role="switch"
+                    [attr.aria-checked]="s.isActive"
+                    [attr.aria-label]="
+                      s.isActive ? 'Deactivate ' + s.fullName : 'Activate ' + s.fullName
+                    "
+                    [disabled]="togglingId() === s.id"
+                    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:opacity-50"
+                    [class]="s.isActive ? 'bg-emerald-500' : 'bg-slate-300'"
+                    (click)="toggleStatus(s)"
+                  >
+                    <span
+                      class="inline-block size-5 rounded-full bg-white shadow transition-transform"
+                      [class]="s.isActive ? 'translate-x-5' : 'translate-x-0.5'"
+                    ></span>
+                  </button>
+                  <span
+                    class="text-xs font-medium"
+                    [class]="s.isActive ? 'text-emerald-700' : 'text-slate-500'"
+                    >{{ s.isActive ? 'Active' : 'Inactive' }}</span
+                  >
+                </div>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-5 py-3">
+                <div class="flex justify-end gap-1.5">
+                  <button
+                    type="button"
+                    class="grid size-9 place-items-center rounded-lg bg-sky-50 text-sky-600 transition hover:bg-sky-100"
+                    aria-label="Edit"
+                    title="Edit"
+                    (click)="openEdit(s)"
+                  >
+                    <i class="fa-solid fa-pen-to-square text-sm"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="grid size-9 place-items-center rounded-lg bg-rose-50 text-rose-600 transition hover:bg-rose-100"
+                    aria-label="Delete"
+                    title="Delete"
+                    (click)="toDelete.set(s)"
+                  >
+                    <i class="fa-solid fa-trash text-sm"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="px-5 py-14 text-center">
+                <div
+                  class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-sky-50 text-sky-400"
                 >
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="7" class="p-12 text-center text-neutral-400">
-              <i class="fa-solid fa-users mb-2 block text-3xl"></i>No staff found
-            </td>
-          </tr>
+                  <i class="fa-solid fa-users text-2xl"></i>
+                </div>
+                <p class="font-medium text-slate-700">No staff found</p>
+                <p class="mt-1 text-sm text-slate-400">
+                  {{
+                    hasFilters()
+                      ? 'Try changing or clearing your filters.'
+                      : 'Add your first team member to get started.'
+                  }}
+                </p>
+                @if (hasFilters()) {
+                  <button
+                    type="button"
+                    class="mt-4 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600"
+                    (click)="clearFilters()"
+                  >
+                    Clear filters
+                  </button>
+                }
+              </td>
+            </tr>
+          }
         }
       </tbody>
     </table>
   </div>
+
+  <!-- Footer count -->
+  @if (service.items().length) {
+    <div class="border-t border-slate-100 bg-slate-50/60 px-5 py-2.5 text-xs text-slate-500">
+      Showing <span class="font-medium text-slate-700">{{ filtered().length }}</span> of
+      <span class="font-medium text-slate-700">{{ service.items().length }}</span> staff
+    </div>
+  }
 </div>
 
 <app-staff-drawer
   [open]="showForm()"
   [staff]="editing()"
+  [saving]="service.saving()"
+  [error]="service.error() ? 'Could not save. Please check the details and try again.' : null"
   (closed)="showForm.set(false)"
   (saved)="save($event)"
 />
@@ -120,7 +309,7 @@
 <app-confirm-dialog
   [open]="!!toDelete()"
   title="Remove staff member"
-  [message]="'Remove ' + toDelete()?.name + ' from the team?'"
+  [message]="'Remove ' + toDelete()?.fullName + ' from the team?'"
   confirmLabel="Remove"
   (confirmed)="confirmDelete()"
   (cancelled)="toDelete.set(null)"
