@@ -74,6 +74,8 @@ export const NAV_SECTIONS: NavSection[] = [
       icon: 'fa-briefcase',
       children: [
         { label: 'Staff', icon: 'fa-users', route: '/staff', permission: 'STAFF_READ' },
+        { label: 'Role', icon: 'fa-users', route: '/role', permission: 'STAFF_READ' },
+        { label: 'Permission', icon: 'fa-users', route: '/permission', permission: 'STAFF_READ' },
         { label: 'Reports', icon: 'fa-chart-pie', route: '/reports', permission: 'REPORT_READ' },
       ],
     },

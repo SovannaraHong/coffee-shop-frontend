@@ -1,8 +1,4 @@
-export interface PermissionResponse {
-  id: number;
-  name: string;
-  description: string;
-}
+import { PermissionResponse } from '../permission/permission-response.model';
 
 export interface RoleResponse {
   id: number;

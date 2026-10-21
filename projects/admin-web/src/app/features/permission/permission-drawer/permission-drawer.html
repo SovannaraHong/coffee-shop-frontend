@@ -1,0 +1,190 @@
+@if (mounted()) {
+  <div class="fixed inset-0 z-[100]" [class.pointer-events-none]="!open()">
+    <!-- Backdrop -->
+    <div
+      class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] transition-opacity duration-300"
+      [class.opacity-100]="shown()"
+      [class.opacity-0]="!shown()"
+      (click)="requestClose()"
+    ></div>
+
+    <!-- Drawer -->
+    <aside
+      class="absolute right-0 top-0 flex h-full flex-col bg-white shadow-2xl"
+      style="
+        width: min(520px, 100vw);
+        transform: translateX(100%);
+        visibility: hidden;
+        transition:
+          transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
+          visibility 350ms;
+      "
+      [style.transform]="shown() ? 'translateX(0)' : 'translateX(100%)'"
+      [style.visibility]="shown() ? 'visible' : 'hidden'"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Permission form"
+    >
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-slate-200 px-8 py-5">
+        <div>
+          <h2 class="text-xl font-medium text-slate-900">
+            {{ isEdit() ? 'Edit permission' : 'Add permission' }}
+          </h2>
+          <p class="mt-0.5 text-sm text-slate-500">A single action that a role can be granted</p>
+        </div>
+
+        <button
+          type="button"
+          aria-label="Close"
+          class="grid size-9 place-items-center rounded-lg bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:opacity-50"
+          [disabled]="saving()"
+          (click)="requestClose()"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <form
+        id="permissionForm"
+        (submit)="$event.preventDefault(); submit()"
+        novalidate
+        class="flex-1 space-y-6 overflow-y-auto px-8 py-6"
+      >
+        @if (error() || formError()) {
+          <div
+            class="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+            role="alert"
+          >
+            <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+            <span>{{ error() || formError() }}</span>
+          </div>
+        }
+
+        @if (isEdit()) {
+          <div
+            class="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800"
+          >
+            <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+            <span>
+              Renaming a permission also changes what your backend checks with
+              <code class="font-mono">hasAuthority(...)</code>. Update those checks too.
+            </span>
+          </div>
+        }
+
+        <!-- Name -->
+        <div>
+          <label for="perm-name" class="mb-1.5 block text-sm font-medium text-slate-700">
+            Permission name
+          </label>
+          <input
+            id="perm-name"
+            type="text"
+            placeholder="e.g. PRODUCT_READ"
+            maxlength="100"
+            autocomplete="off"
+            class="h-[42px] w-full rounded-lg border border-slate-200 px-3.5 font-mono text-[14px] outline-none placeholder:font-sans placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+            [value]="name()"
+            (input)="onName($any($event.target).value)"
+            (blur)="touched.set(true)"
+          />
+          @if (touched() && (!name() || nameInvalid())) {
+            <p class="mt-1 text-xs text-rose-500">Name is required.</p>
+          } @else {
+            <p class="mt-1 text-xs text-slate-400">
+              Format <span class="font-mono">MODULE_ACTION</span>. Spaces become underscores.
+            </p>
+          }
+
+          <!-- Quick actions -->
+          <div class="mt-3">
+            <p class="mb-1.5 text-xs font-medium text-slate-500">Quick action</p>
+            <div class="flex flex-wrap gap-1.5">
+              @for (a of actions; track a) {
+                <button
+                  type="button"
+                  class="rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset transition hover:brightness-95"
+                  [class]="badge(a)"
+                  (click)="setAction(a)"
+                >
+                  {{ a }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Live preview -->
+          @if (name()) {
+            <div
+              class="mt-4 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3"
+            >
+              <div class="grid size-10 place-items-center rounded-lg bg-sky-100 text-sky-600">
+                <i class="fa-solid fa-key"></i>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="truncate font-mono text-[13px] font-semibold text-slate-900">
+                  {{ name() }}
+                </p>
+                <p class="text-xs capitalize text-slate-500">
+                  Module: {{ moduleKey().toLowerCase().replaceAll('_', ' ') }}
+                </p>
+              </div>
+              @if (actionKey()) {
+                <span
+                  class="rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
+                  [class]="badge(actionKey())"
+                  >{{ actionKey() }}</span
+                >
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="perm-desc" class="mb-1.5 block text-sm font-medium text-slate-700">
+            Description
+          </label>
+          <textarea
+            id="perm-desc"
+            rows="4"
+            maxlength="255"
+            placeholder="What does this permission allow?"
+            class="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-[15px] outline-none placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+            [value]="description()"
+            (input)="description.set($any($event.target).value)"
+          ></textarea>
+          <p class="mt-1 text-right text-xs text-slate-400">{{ description().length }}/255</p>
+        </div>
+      </form>
+
+      <!-- Footer -->
+      <div class="flex gap-3 border-t border-slate-200 px-8 py-4">
+        <button
+          type="button"
+          class="h-[42px] flex-1 rounded-lg border border-slate-300 bg-white text-[15px] text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          [disabled]="saving()"
+          (click)="requestClose()"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          form="permissionForm"
+          [disabled]="saving()"
+          class="h-[42px] flex-1 rounded-lg bg-sky-500 text-[15px] font-medium text-white shadow-sm hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          @if (saving()) {
+            <i class="fa-solid fa-spinner fa-spin mr-1.5 text-xs"></i> Saving...
+          } @else {
+            <i class="fa-solid fa-check mr-1.5 text-xs"></i>
+            {{ isEdit() ? 'Save changes' : 'Add permission' }}
+          }
+        </button>
+      </div>
+    </aside>
+  </div>
+}

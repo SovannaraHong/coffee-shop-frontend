@@ -112,6 +112,17 @@ export const routes: Routes = [
           import('./features/staff/staff-list/staff-list').then((m) => m.StaffList),
       },
       {
+        path: 'role',
+        loadComponent: () => import('./features/role/role-list/role-list').then((m) => m.RoleList),
+      },
+      {
+        path: 'permission',
+        loadComponent: () =>
+          import('./features/permission/permission-list/permission-list').then(
+            (m) => m.PermissionList,
+          ),
+      },
+      {
         path: 'reports',
         loadComponent: () => import('./features/reports/reports').then((m) => m.Reports),
       },

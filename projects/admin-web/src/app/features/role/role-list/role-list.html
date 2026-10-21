@@ -1,0 +1,236 @@
+<!-- Header -->
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <h1 class="text-[28px] font-normal leading-tight text-slate-900">Roles</h1>
+    <p class="mt-1 text-[15px] text-slate-500">Manage roles and what each one is allowed to do</p>
+  </div>
+  <button
+    type="button"
+    class="inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-300"
+    (click)="openAdd()"
+  >
+    <i class="fa-solid fa-plus text-xs"></i> Add role
+  </button>
+</div>
+
+<!-- Summary cards -->
+<div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+  <div class="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="grid size-12 place-items-center rounded-xl bg-sky-100 text-sky-600">
+      <i class="fa-solid fa-user-shield text-lg"></i>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-slate-500">Total roles</p>
+      <p class="text-2xl font-semibold text-slate-900">{{ stats().total }}</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="grid size-12 place-items-center rounded-xl bg-emerald-100 text-emerald-600">
+      <i class="fa-solid fa-key text-lg"></i>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-slate-500">Permissions</p>
+      <p class="text-2xl font-semibold text-slate-900">{{ stats().permissions }}</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="grid size-12 place-items-center rounded-xl bg-slate-100 text-slate-500">
+      <i class="fa-solid fa-lock-open text-lg"></i>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-slate-500">Roles without permissions</p>
+      <p class="text-2xl font-semibold text-slate-900">{{ stats().empty }}</p>
+    </div>
+  </div>
+</div>
+
+<!-- Search -->
+<div class="mb-4 flex">
+  <div class="relative sm:w-80">
+    <i
+      class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400"
+    ></i>
+    <input
+      type="text"
+      class="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-9 text-sm outline-none placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+      placeholder="Search role or permission…"
+      aria-label="Search roles"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+    @if (search()) {
+      <button
+        type="button"
+        class="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        aria-label="Clear search"
+        (click)="search.set('')"
+      >
+        <i class="fa-solid fa-xmark text-xs"></i>
+      </button>
+    }
+  </div>
+</div>
+
+<!-- Error -->
+@if (error() && !showDrawer()) {
+  <div
+    class="mb-4 flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+  >
+    <span>
+      <i class="fa-solid fa-circle-exclamation mr-2"></i>Something went wrong. Please try again.
+    </span>
+    <button type="button" class="font-medium underline" (click)="service.load()">Retry</button>
+  </div>
+}
+
+<!-- Table -->
+<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[720px] text-left text-sm">
+      <thead
+        class="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500"
+      >
+        <tr>
+          <th class="px-5 py-3">Role</th>
+          <th class="px-5 py-3">Permissions</th>
+          <th class="px-5 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-slate-100">
+        @if (loading() && !roles().length) {
+          @for (n of skeleton; track n) {
+            <tr class="animate-pulse">
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="size-11 rounded-xl bg-slate-200"></div>
+                  <div class="space-y-2">
+                    <div class="h-3 w-28 rounded bg-slate-200"></div>
+                    <div class="h-3 w-16 rounded bg-slate-100"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-4"><div class="h-6 w-64 rounded-full bg-slate-100"></div></td>
+              <td class="px-5 py-4"><div class="ml-auto h-8 w-20 rounded bg-slate-100"></div></td>
+            </tr>
+          }
+        } @else {
+          @for (r of filtered(); track r.id) {
+            <tr class="transition-colors hover:bg-sky-50/50">
+              <!-- Role -->
+              <td class="px-5 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="grid size-11 place-items-center rounded-xl bg-sky-100 text-sky-600">
+                    <i class="fa-solid fa-user-shield"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <span
+                      class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ring-1 ring-inset"
+                      [class]="roleBadge(r.name)"
+                      >{{ r.name.toLowerCase() }}</span
+                    >
+                    <p class="mt-1 text-xs text-slate-400">ID: {{ r.id }}</p>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Permissions -->
+              <td class="px-5 py-3">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  @for (p of visiblePermissions(r); track p.id) {
+                    <span
+                      class="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600"
+                      [attr.title]="p.description"
+                    >
+                      {{ p.name }}
+                    </span>
+                  } @empty {
+                    <span class="text-xs text-slate-400">No permissions</span>
+                  }
+                  @if (extraCount(r) > 0) {
+                    <span class="rounded-md bg-sky-50 px-2 py-1 text-xs font-medium text-sky-700">
+                      +{{ extraCount(r) }} more
+                    </span>
+                  }
+                </div>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-5 py-3">
+                <div class="flex justify-end gap-1.5">
+                  <button
+                    type="button"
+                    class="grid size-9 place-items-center rounded-lg bg-sky-50 text-sky-600 transition hover:bg-sky-100"
+                    aria-label="Edit"
+                    title="Edit"
+                    (click)="openEdit(r)"
+                  >
+                    <i class="fa-solid fa-pen-to-square text-sm"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="grid size-9 place-items-center rounded-lg bg-rose-50 text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+                    aria-label="Delete"
+                    title="Delete"
+                    [disabled]="saving()"
+                    (click)="toDelete.set(r)"
+                  >
+                    <i class="fa-solid fa-trash text-sm"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="px-5 py-14 text-center">
+                <div
+                  class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-sky-50 text-sky-400"
+                >
+                  <i class="fa-solid fa-user-shield text-2xl"></i>
+                </div>
+                <p class="font-medium text-slate-700">No roles found</p>
+                <p class="mt-1 text-sm text-slate-400">
+                  {{
+                    search() ? 'Try changing your search.' : 'Add your first role to get started.'
+                  }}
+                </p>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (roles().length) {
+    <div class="border-t border-slate-100 bg-slate-50/60 px-5 py-2.5 text-xs text-slate-500">
+      Showing <span class="font-medium text-slate-700">{{ filtered().length }}</span> of
+      <span class="font-medium text-slate-700">{{ roles().length }}</span> roles
+    </div>
+  }
+</div>
+
+<app-role-drawer
+  [open]="showDrawer()"
+  [role]="editing()"
+  [permissions]="permissions()"
+  [permissionsLoading]="service.permissionsLoading()"
+  [saving]="saving()"
+  [error]="saveError()"
+  (closed)="closeDrawer()"
+  (saved)="onSaved($event)"
+  (retryPermissions)="service.loadPermissions()"
+/>
+
+<app-confirm-dialog
+  [open]="!!toDelete()"
+  title="Delete role"
+  [message]="
+    'Delete ' + toDelete()?.name + '? Staff using this role may lose access. This cannot be undone.'
+  "
+  confirmLabel="Delete"
+  (confirmed)="confirmDelete()"
+  (cancelled)="toDelete.set(null)"
+/>
