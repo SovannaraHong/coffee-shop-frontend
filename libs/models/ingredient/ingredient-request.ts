@@ -11,30 +11,33 @@ export interface IngredientUpdateRequest {
   reorderLevel?: number;
 }
 
-/** Used by increment-stock and decrement-stock. */
+/**
+ * Must match the Java enum StockReferenceType exactly:
+ * PURCHASE_ORDER, WASTE, MANUAL
+ */
+export const STOCK_REASONS = [
+  { value: 'PURCHASE_ORDER', label: 'Purchase / restock' },
+  { value: 'WASTE', label: 'Waste / spoilage' },
+  { value: 'MANUAL', label: 'Manual adjustment' },
+] as const;
+
+export type StockReason = (typeof STOCK_REASONS)[number]['value'];
+
+/** Used by increment-stock (Add) and decrement-stock (Remove). */
 export interface StockAdjustRequest {
   quantity: number;
-  /** Required by the backend (@NotBlank). */
-  referenceType: string;
-  referenceId?: number;
+  /** Required by the backend. Must be one of StockReason. */
+  referenceType: StockReason;
+  /** Optional, e.g. a purchase order id. */
+  referenceId?: number | null;
   notes?: string;
 }
 
-/** Used by adjust-stock (set an exact value). Notes are required. */
+/** Used by adjust-stock (Set exact). Notes are required. */
 export interface StockSetRequest {
   newQuantity: number;
   notes: string;
 }
-
-/**
- * ASSUMPTION: I haven't seen which referenceType values your service accepts.
- * Change the `value` strings here (one place) to match your backend.
- */
-export const STOCK_REASONS: { value: string; label: string }[] = [
-  { value: 'PURCHASE', label: 'Purchase / restock' },
-  { value: 'WASTE', label: 'Waste / spoilage' },
-  { value: 'MANUAL', label: 'Manual adjustment' },
-];
 
 /** What the ingredient drawer emits when the form is saved. */
 export interface IngredientPayload {

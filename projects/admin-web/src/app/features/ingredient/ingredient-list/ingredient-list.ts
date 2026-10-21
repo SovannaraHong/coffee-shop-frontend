@@ -167,32 +167,34 @@ export class IngredientList implements OnInit {
     this.stockError.set(null);
   }
 
-  protected async onStockSubmitted(change: StockChange): Promise<void> {
-    const target = this.stockTarget();
-    if (!target || this.saving()) {
-      return;
-    }
+  protected async onStockSubmitted(c: StockChange): Promise<void> {
+    const ing = this.stockTarget();
+    if (!ing) return;
+
     this.stockError.set(null);
 
-    const notes = change.notes || undefined;
-    const adjust = {
-      quantity: change.quantity,
-      referenceType: change.referenceType,
-      notes,
-    };
+    let ok: boolean;
 
-    const success =
-      change.mode === 'add'
-        ? await this.ingredientService.increaseStock(target.id, adjust)
-        : change.mode === 'remove'
-          ? await this.ingredientService.decreaseStock(target.id, adjust)
-          : await this.ingredientService.setStock(target.id, {
-              newQuantity: change.quantity,
-              notes: change.notes,
-            });
+    if (c.mode === 'set') {
+      // Set exact -> POST /ingredient/{id}/adjust-stock
+      ok = await this.ingredientService.setStock(ing.id, {
+        newQuantity: c.quantity,
+        notes: c.notes,
+      });
+    } else {
+      const body = {
+        quantity: c.quantity,
+        referenceType: c.referenceType,
+        notes: c.notes || undefined,
+      };
+      ok =
+        c.mode === 'add'
+          ? await this.ingredientService.increaseStock(ing.id, body) // POST /ingredient/{id}/increment-stock
+          : await this.ingredientService.decreaseStock(ing.id, body); // POST /ingredient/{id}/decrement-stock
+    }
 
-    if (success) {
-      this.stockTarget.set(null);
+    if (ok) {
+      this.closeStock();
     } else {
       this.stockError.set('Could not update the stock. Please try again.');
     }
