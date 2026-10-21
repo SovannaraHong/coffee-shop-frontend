@@ -37,6 +37,7 @@ export const NAV_SECTIONS: NavSection[] = [
         { label: 'Products', icon: 'fa-cube', route: '/products', permission: 'PRODUCT_READ' },
         { label: 'Categories', icon: 'fa-tags', route: '/categories', permission: 'CATEGORY_READ' },
         { label: 'Recipe', icon: 'fa-tags', route: '/recipe', permission: 'CATEGORY_READ' },
+        { label: 'Variant', icon: 'fa-truck-ramp-box', route: '/variant' },
         { label: 'Suppliers', icon: 'fa-truck', route: '/suppliers', permission: 'SUPPLIER_READ' },
         { label: 'Ingredients', icon: 'fa-wheat-awn', route: '/ingredients' },
         { label: 'Inventory transactions', icon: 'fa-right-left', route: '/inventory-transaction' },

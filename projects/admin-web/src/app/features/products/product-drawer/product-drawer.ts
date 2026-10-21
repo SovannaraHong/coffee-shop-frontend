@@ -282,11 +282,17 @@ export class ProductDrawer {
       return;
     }
 
-    const skus = variants.map((v) => v.sku.toLowerCase());
+    const skus = variants.map((v) => (v.sku ?? '').trim().toLowerCase()).filter((s) => s !== ''); // ignore empty SKUs, they are optional
+
     if (new Set(skus).size !== skus.length) {
       this.formError.set('Two variants have the same SKU.');
       return;
     }
+    // const skus = variants.map((v) => v.sku.toLowerCase());
+    // if (new Set(skus).size !== skus.length) {
+    //   this.formError.set('Two variants have the same SKU.');
+    //   return;
+    // }
 
     const payload: ProductPayload = {
       name: raw.name.trim(),

@@ -3,6 +3,11 @@ export interface VariantResponse {
   productName: string;
   name: string;
   price: number;
-  sku: string;
+  sku: string | null;
   isActive: boolean;
+}
+
+export interface ProductOption {
+  id: number;
+  name: string;
 }

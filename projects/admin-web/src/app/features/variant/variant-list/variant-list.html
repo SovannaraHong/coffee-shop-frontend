@@ -1,0 +1,361 @@
+<app-page-header title="Variants" subtitle="Sizes, flavors and prices for each product">
+  <div class="flex gap-2">
+    <button
+      type="button"
+      class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+      [disabled]="service.loading()"
+      (click)="service.load()"
+    >
+      <i class="fa-solid fa-rotate text-xs" [class.fa-spin]="service.loading()"></i> Refresh
+    </button>
+    <button
+      type="button"
+      class="inline-flex h-10 items-center gap-2 rounded-xl bg-sky-500 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-sky-600 focus-visible:ring-4 focus-visible:ring-sky-500/30"
+      (click)="openAdd()"
+    >
+      <i class="fa-solid fa-plus text-xs"></i> Add variant
+    </button>
+  </div>
+</app-page-header>
+
+<!-- Summary cards (click to filter) -->
+<div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+  <button
+    type="button"
+    class="flex items-center gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-md"
+    [class]="status() === 'all' ? 'border-sky-300 ring-2 ring-sky-100' : 'border-slate-200'"
+    (click)="status.set('all'); page.set(1)"
+  >
+    <div class="grid size-12 place-items-center rounded-xl bg-sky-100 text-sky-600">
+      <i class="fa-solid fa-layer-group text-lg"></i>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-slate-500">Total variants</p>
+      <p class="text-2xl font-semibold text-slate-900">{{ stats().total }}</p>
+    </div>
+  </button>
+
+  <button
+    type="button"
+    class="flex items-center gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-md"
+    [class]="
+      status() === 'active' ? 'border-emerald-300 ring-2 ring-emerald-100' : 'border-slate-200'
+    "
+    (click)="setStatus('active')"
+  >
+    <div class="grid size-12 place-items-center rounded-xl bg-emerald-100 text-emerald-600">
+      <i class="fa-solid fa-circle-check text-lg"></i>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-slate-500">Active</p>
+      <p class="text-2xl font-semibold text-slate-900">{{ stats().active }}</p>
+    </div>
+  </button>
+
+  <button
+    type="button"
+    class="flex items-center gap-4 rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:shadow-md"
+    [class]="
+      status() === 'inactive' ? 'border-slate-400 ring-2 ring-slate-200' : 'border-slate-200'
+    "
+    (click)="setStatus('inactive')"
+  >
+    <div class="grid size-12 place-items-center rounded-xl bg-slate-100 text-slate-500">
+      <i class="fa-solid fa-circle-pause text-lg"></i>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-slate-500">Inactive</p>
+      <p class="text-2xl font-semibold text-slate-900">{{ stats().inactive }}</p>
+    </div>
+  </button>
+</div>
+
+<!-- Table card -->
+<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <!-- Filters -->
+  <div
+    class="flex flex-col gap-3 border-b border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between"
+  >
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <select
+        class="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15 sm:w-56"
+        [value]="product()"
+        (change)="setProduct($any($event.target).value)"
+        aria-label="Filter by product"
+      >
+        <option value="all">All products</option>
+        @for (p of productNames(); track p) {
+          <option [value]="p">{{ p }}</option>
+        }
+      </select>
+
+      @if (hasFilters()) {
+        <button
+          type="button"
+          class="inline-flex h-11 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-sky-600 hover:bg-sky-50"
+          (click)="clearFilters()"
+        >
+          <i class="fa-solid fa-rotate-left text-xs"></i> Clear filters
+        </button>
+      }
+    </div>
+
+    <div class="relative w-full lg:w-80">
+      <i
+        class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-400"
+      ></i>
+      <input
+        type="text"
+        autocomplete="off"
+        placeholder="Search variant, SKU or product…"
+        aria-label="Search variants"
+        class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-11 pr-10 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15"
+        [value]="search()"
+        (input)="setSearch($any($event.target).value)"
+      />
+      @if (search()) {
+        <button
+          type="button"
+          class="absolute right-2.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full bg-slate-100 text-xs text-slate-500 hover:bg-slate-200"
+          aria-label="Clear search"
+          (click)="setSearch('')"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Error -->
+  @if (service.error() && !showForm()) {
+    <div
+      class="flex items-center justify-between gap-3 border-b border-rose-200 bg-rose-50 px-5 py-3 text-sm text-rose-700"
+      role="alert"
+    >
+      <span><i class="fa-solid fa-circle-exclamation mr-2"></i>{{ service.error() }}</span>
+      <button type="button" class="font-medium underline" (click)="service.load()">Retry</button>
+    </div>
+  }
+
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[800px] text-left text-sm">
+      <thead
+        class="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500"
+      >
+        <tr>
+          <th class="px-5 py-3.5">Variant</th>
+          <th class="px-5 py-3.5">Product</th>
+          <th class="px-5 py-3.5">SKU</th>
+          <th class="px-5 py-3.5">Price</th>
+          <th class="px-5 py-3.5">Status</th>
+          <th class="px-5 py-3.5 text-right">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-slate-100">
+        @if (service.loading() && !service.items().length) {
+          @for (n of skeleton; track n) {
+            <tr class="animate-pulse">
+              <td class="px-5 py-4"><div class="h-3 w-32 rounded bg-slate-200"></div></td>
+              <td class="px-5 py-4"><div class="h-5 w-24 rounded-full bg-slate-200"></div></td>
+              <td class="px-5 py-4"><div class="h-3 w-20 rounded bg-slate-100"></div></td>
+              <td class="px-5 py-4"><div class="h-3 w-14 rounded bg-slate-200"></div></td>
+              <td class="px-5 py-4"><div class="h-6 w-24 rounded-full bg-slate-200"></div></td>
+              <td class="px-5 py-4"><div class="ml-auto h-8 w-20 rounded bg-slate-100"></div></td>
+            </tr>
+          }
+        } @else {
+          @for (v of paged(); track v.id) {
+            <tr class="transition-colors hover:bg-sky-50/50" [class.opacity-70]="!v.isActive">
+              <!-- Variant -->
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="grid size-10 shrink-0 place-items-center rounded-xl bg-sky-100 text-sky-600"
+                  >
+                    <i class="fa-solid fa-tag"></i>
+                  </div>
+                  <p class="truncate font-medium text-slate-900">{{ v.name }}</p>
+                </div>
+              </td>
+
+              <!-- Product -->
+              <td class="px-5 py-3.5">
+                <span
+                  class="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-200"
+                  >{{ v.productName }}</span
+                >
+              </td>
+
+              <!-- SKU -->
+              <td class="px-5 py-3.5">
+                @if (v.sku) {
+                  <span class="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs text-slate-600">{{
+                    v.sku
+                  }}</span>
+                } @else {
+                  <span class="text-slate-300">—</span>
+                }
+              </td>
+
+              <!-- Price -->
+              <td class="px-5 py-3.5">
+                <span class="font-semibold tabular-nums text-slate-900">{{
+                  v.price | currency
+                }}</span>
+              </td>
+
+              <!-- Status toggle -->
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    role="switch"
+                    [attr.aria-checked]="v.isActive"
+                    [attr.aria-label]="(v.isActive ? 'Deactivate ' : 'Activate ') + v.name"
+                    [disabled]="togglingId() === v.id"
+                    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:opacity-50"
+                    [class]="v.isActive ? 'bg-emerald-500' : 'bg-slate-300'"
+                    (click)="toggleStatus(v)"
+                  >
+                    <span
+                      class="inline-block size-5 rounded-full bg-white shadow transition-transform"
+                      [class]="v.isActive ? 'translate-x-5' : 'translate-x-0.5'"
+                    ></span>
+                  </button>
+                  <span
+                    class="text-xs font-medium"
+                    [class]="v.isActive ? 'text-emerald-700' : 'text-slate-500'"
+                    >{{ v.isActive ? 'Active' : 'Inactive' }}</span
+                  >
+                </div>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-5 py-3.5">
+                <div class="flex justify-end gap-1.5">
+                  <button
+                    type="button"
+                    class="grid size-9 place-items-center rounded-lg bg-sky-50 text-sky-600 transition hover:bg-sky-100"
+                    aria-label="Edit"
+                    title="Edit"
+                    (click)="openEdit(v)"
+                  >
+                    <i class="fa-solid fa-pen-to-square text-sm"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="grid size-9 place-items-center rounded-lg bg-rose-50 text-rose-600 transition hover:bg-rose-100"
+                    aria-label="Delete"
+                    title="Delete"
+                    (click)="toDelete.set(v)"
+                  >
+                    <i class="fa-solid fa-trash text-sm"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-5 py-14 text-center">
+                <div
+                  class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-sky-50 text-2xl text-sky-400"
+                >
+                  <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <p class="font-medium text-slate-700">No variants found</p>
+                <p class="mt-1 text-sm text-slate-400">
+                  {{
+                    hasFilters()
+                      ? 'Try changing or clearing your filters.'
+                      : 'Add a variant such as a size or flavor to a product.'
+                  }}
+                </p>
+                @if (hasFilters()) {
+                  <button
+                    type="button"
+                    class="mt-4 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600"
+                    (click)="clearFilters()"
+                  >
+                    Clear filters
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="mt-4 inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600"
+                    (click)="openAdd()"
+                  >
+                    <i class="fa-solid fa-plus text-xs"></i> Add variant
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer / pagination -->
+  <div
+    class="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
+  >
+    <span class="text-xs text-slate-500">
+      Showing <span class="font-semibold text-slate-700">{{ paged().length }}</span> of
+      <span class="font-semibold text-slate-700">{{ filtered().length }}</span> variants
+    </span>
+    @if (pageCount() > 1) {
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          class="h-8 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+          [disabled]="page() === 1"
+          (click)="goTo(page() - 1)"
+        >
+          Previous
+        </button>
+        @for (n of pages(); track n) {
+          <button
+            type="button"
+            class="size-8 rounded-lg text-sm font-medium transition"
+            [class]="
+              n === page()
+                ? 'bg-sky-500 text-white'
+                : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+            "
+            (click)="goTo(n)"
+          >
+            {{ n }}
+          </button>
+        }
+        <button
+          type="button"
+          class="h-8 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+          [disabled]="page() === pageCount()"
+          (click)="goTo(page() + 1)"
+        >
+          Next
+        </button>
+      </div>
+    }
+  </div>
+</div>
+
+<app-variant-drawer
+  [open]="showForm()"
+  [variant]="editing()"
+  [products]="service.products()"
+  [variants]="service.items()"
+  [saving]="service.saving()"
+  [error]="showForm() ? service.error() : null"
+  (closed)="closeForm()"
+  (saved)="save($event)"
+/>
+<app-confirm-dialog
+  [open]="!!toDelete()"
+  title="Delete variant"
+  [message]="'Delete ' + toDelete()?.name + ' from ' + toDelete()?.productName + '?'"
+  confirmLabel="Delete"
+  (confirmed)="confirmDelete()"
+  (cancelled)="toDelete.set(null)"
+/>
