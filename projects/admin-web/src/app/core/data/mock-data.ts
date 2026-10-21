@@ -14,7 +14,6 @@ import {
 } from '../models/order';
 import { Payment } from '../models/payment';
 import { Product } from '../models/product';
-import { Staff } from '../models/staff';
 import { Supplier } from '../models/supplier';
 
 export const CATEGORIES: CategoryRequest[] = [
@@ -468,75 +467,6 @@ export const INVENTORY: InventoryItem[] = [
     supplierId: 4,
     costPerUnit: 0.01,
     lastRestocked: '2026-10-09',
-  },
-];
-
-export const STAFF: Staff[] = [
-  {
-    id: 1,
-    name: 'Alex Morgan',
-    email: 'alex@brewly.example',
-    phone: '555-0201',
-    role: 'Manager',
-    shift: 'Full day',
-    status: 'Active',
-    joinedAt: '2023-02-10',
-    avatar: 'assets/images/avatar/avatar-1.jpg',
-  },
-  {
-    id: 2,
-    name: 'Priya Nair',
-    email: 'priya@brewly.example',
-    phone: '555-0202',
-    role: 'Barista',
-    shift: 'Morning',
-    status: 'Active',
-    joinedAt: '2023-06-01',
-    avatar: 'assets/images/avatar/avatar-2.jpg',
-  },
-  {
-    id: 3,
-    name: 'Marcus Lee',
-    email: 'marcus@brewly.example',
-    phone: '555-0203',
-    role: 'Barista',
-    shift: 'Evening',
-    status: 'Active',
-    joinedAt: '2024-01-15',
-    avatar: 'assets/images/avatar/avatar-3.jpg',
-  },
-  {
-    id: 4,
-    name: 'Sofia Rossi',
-    email: 'sofia@brewly.example',
-    phone: '555-0204',
-    role: 'Cashier',
-    shift: 'Morning',
-    status: 'Active',
-    joinedAt: '2024-04-22',
-    avatar: 'assets/images/avatar/avatar-4.jpg',
-  },
-  {
-    id: 5,
-    name: 'Daniel Kim',
-    email: 'daniel@brewly.example',
-    phone: '555-0205',
-    role: 'Barista',
-    shift: 'Evening',
-    status: 'On leave',
-    joinedAt: '2024-09-03',
-    avatar: 'assets/images/avatar/avatar-5.jpg',
-  },
-  {
-    id: 6,
-    name: 'Emma Walker',
-    email: 'emma@brewly.example',
-    phone: '555-0206',
-    role: 'Waiter',
-    shift: 'Morning',
-    status: 'Active',
-    joinedAt: '2025-03-18',
-    avatar: 'assets/images/avatar/avatar-6.jpg',
   },
 ];
 
