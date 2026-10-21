@@ -1,109 +1,119 @@
-import { InventoryTransaction } from './../../../../../../libs/models/inventoryTransaction/inventory-transaction';
-import { Injectable, signal } from '@angular/core';
+import { InventoryTransactionApiService } from './../../../../../../libs/api/inventory-transaction/inventory-trasaction.service';
+import { inject, Injectable, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
-// Sample data. Swap this service for HttpClient calls when your API is ready.
-const SEED: InventoryTransaction[] = [
-  {
-    id: 1,
-    ingredientId: 1,
-    transactionType: 'Purchase',
-    quantity: 10,
-    transactionDate: '2026-10-02T09:30:00',
-    referenceId: 1001,
-    referenceType: 'PURCHASE_ORDER',
-    notes: null,
-    createdAt: '2026-10-02T09:30:00',
-    updatedAt: null,
-    createdBy: 'Alex Morgan',
-    updatedBy: null,
-  },
-  {
-    id: 2,
-    ingredientId: 2,
-    transactionType: 'Usage',
-    quantity: -6,
-    transactionDate: '2026-10-15T11:02:00',
-    referenceId: 1048,
-    referenceType: 'ORDERS',
-    notes: null,
-    createdAt: '2026-10-15T11:02:00',
-    updatedAt: null,
-    createdBy: 'System',
-    updatedBy: null,
-  },
-  {
-    id: 3,
-    ingredientId: 2,
-    transactionType: 'Adjustment',
-    quantity: -4,
-    transactionDate: '2026-10-16T08:12:00',
-    referenceId: 12,
-    referenceType: 'STOCK_ADJUSTMENTS',
-    notes: 'Spoilage',
-    createdAt: '2026-10-16T08:12:00',
-    updatedAt: null,
-    createdBy: 'Alex Morgan',
-    updatedBy: null,
-  },
-  {
-    id: 4,
-    ingredientId: 3,
-    transactionType: 'Usage',
-    quantity: -120,
-    transactionDate: '2026-10-17T14:20:00',
-    referenceId: 1052,
-    referenceType: 'ORDERS',
-    notes: null,
-    createdAt: '2026-10-17T14:20:00',
-    updatedAt: null,
-    createdBy: 'System',
-    updatedBy: null,
-  },
-  {
-    id: 5,
-    ingredientId: 4,
-    transactionType: 'Waste',
-    quantity: -30,
-    transactionDate: '2026-10-11T10:05:00',
-    referenceId: null,
-    referenceType: null,
-    notes: 'Damaged box',
-    createdAt: '2026-10-11T10:05:00',
-    updatedAt: null,
-    createdBy: 'Sok Dara',
-    updatedBy: null,
-  },
-  {
-    id: 6,
-    ingredientId: 5,
-    transactionType: 'Purchase',
-    quantity: 12,
-    transactionDate: '2026-10-07T08:45:00',
-    referenceId: 1002,
-    referenceType: 'PURCHASE_ORDER',
-    notes: null,
-    createdAt: '2026-10-07T08:45:00',
-    updatedAt: null,
-    createdBy: 'Alex Morgan',
-    updatedBy: null,
-  },
-];
-
-// Temporary lookup. Replace with your INGREDIENT table / IngredientService.
-export const INGREDIENT_LOOKUP: Record<number, { name: string; unit: string }> = {
-  1: { name: 'Espresso beans', unit: 'kg' },
-  2: { name: 'Whole milk', unit: 'L' },
-  3: { name: 'Caramel syrup', unit: 'ml' },
-  4: { name: 'Paper cups 12oz', unit: 'pcs' },
-  5: { name: 'Oat milk', unit: 'L' },
-};
+import { PageResponse } from '../../../../../../libs/models/common/page-response.model';
+import {
+  TransactionPaginationParams,
+  TransactionResponse,
+  TransactionType,
+} from '../../../../../../libs/models/inventoryTransaction/transaction-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class InventoryTransactionService {
-  private readonly data = signal<InventoryTransaction[]>(SEED);
-  readonly items = this.data.asReadonly();
+  private readonly api = inject(InventoryTransactionApiService);
 
-  ingredient(id: number) {
-    return INGREDIENT_LOOKUP[id] ?? { name: `Ingredient #${id}`, unit: '' };
+  // private writable state
+  private readonly _items = signal<TransactionResponse[]>([]);
+  private readonly _error = signal(false);
+  private readonly _loading = signal(false);
+
+  // public read-only state
+  readonly items = this._items.asReadonly();
+  readonly loading = this._loading.asReadonly();
+  readonly error = this._error.asReadonly();
+
+  // get all transactions
+  async load(): Promise<boolean> {
+    this._error.set(false);
+    this._loading.set(true);
+    try {
+      const transactions = await firstValueFrom(this.api.getAllTransactions());
+      this._items.set(transactions);
+      return true;
+    } catch (error) {
+      console.error('Failed to load transactions:', error);
+      this._error.set(true);
+      return false;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  // get transactions with pagination
+  async loadPage(
+    params: TransactionPaginationParams,
+  ): Promise<PageResponse<TransactionResponse> | null> {
+    this._loading.set(true);
+    this._error.set(false);
+    try {
+      return await firstValueFrom(this.api.getTransactions(params));
+    } catch (error) {
+      console.error('Failed to load paginated transactions:', error);
+      this._error.set(true);
+      return null;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  // get transaction by id
+  async getById(id: number): Promise<TransactionResponse | null> {
+    this._error.set(false);
+    try {
+      return await firstValueFrom(this.api.getTransactionById(id));
+    } catch (error) {
+      console.error('Failed to get transaction:', error);
+      this._error.set(true);
+      return null;
+    }
+  }
+
+  // get transactions of one ingredient
+  async loadByIngredient(ingredientId: number): Promise<boolean> {
+    this._error.set(false);
+    this._loading.set(true);
+    try {
+      this._items.set(await firstValueFrom(this.api.getByIngredient(ingredientId)));
+      return true;
+    } catch (error) {
+      console.error('Failed to load transactions by ingredient:', error);
+      this._error.set(true);
+      return false;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  // get transactions by type
+  async loadByType(type: TransactionType): Promise<boolean> {
+    this._error.set(false);
+    this._loading.set(true);
+    try {
+      this._items.set(await firstValueFrom(this.api.getByType(type)));
+      return true;
+    } catch (error) {
+      console.error('Failed to load transactions by type:', error);
+      this._error.set(true);
+      return false;
+    } finally {
+      this._loading.set(false);
+    }
+  }
+
+  // get transactions by date range (ISO date-time strings, e.g. 2026-10-01T00:00:00)
+  async loadByDateRange(start: string, end: string): Promise<boolean> {
+    this._error.set(false);
+    this._loading.set(true);
+    try {
+      this._items.set(await firstValueFrom(this.api.getByDateRange(start, end)));
+      return true;
+    } catch (error) {
+      console.error('Failed to load transactions by date range:', error);
+      this._error.set(true);
+      return false;
+    } finally {
+      this._loading.set(false);
+    }
   }
 }
