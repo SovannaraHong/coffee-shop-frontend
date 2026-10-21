@@ -41,6 +41,7 @@ export const NAV_SECTIONS: NavSection[] = [
         { label: 'Ingredients', icon: 'fa-wheat-awn', route: '/ingredients' },
         { label: 'Inventory transactions', icon: 'fa-right-left', route: '/inventory-transaction' },
         { label: 'Add-ons', icon: 'fa-mug-saucer', route: '/addons' },
+        { label: 'Stock adjustments', icon: 'fa-sliders', route: '/stock-adjustment' },
       ],
     },
   ],
