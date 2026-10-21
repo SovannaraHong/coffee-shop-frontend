@@ -73,6 +73,11 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'variant',
+        loadComponent: () =>
+          import('./features/variant/variant-list/variant-list').then((m) => m.VariantList),
+      },
+      {
         path: 'ingredients',
         loadComponent: () =>
           import('./features/ingredient/ingredient-list/ingredient-list').then(
