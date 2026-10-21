@@ -1,29 +1,37 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PaymentMethod, PaymentStatus } from '../../../core/models/order';
 import { PaymentService } from '../../../core/services/payment-service';
 
-const METHOD_ICON: Record<PaymentMethod, string> = {
-  Cash: 'fa-money-bill-wave',
-  Card: 'fa-credit-card',
-  'QR Pay': 'fa-qrcode',
+// Backend statuses: PENDING | PAID | FAILED | EXPIRED
+// Backend methods:  KHQR | CASH | CARD
+
+const METHOD_ICON: Record<string, string> = {
+  CASH: 'fa-money-bill-wave',
+  CARD: 'fa-credit-card',
+  KHQR: 'fa-qrcode',
 };
-const METHOD_TONE: Record<PaymentMethod, string> = {
-  Cash: 'bg-emerald-50 text-emerald-600',
-  Card: 'bg-blue-50 text-blue-600',
-  'QR Pay': 'bg-violet-50 text-violet-600',
+const METHOD_TONE: Record<string, string> = {
+  CASH: 'bg-emerald-50 text-emerald-600',
+  CARD: 'bg-blue-50 text-blue-600',
+  KHQR: 'bg-violet-50 text-violet-600',
 };
-const METHOD_BAR: Record<PaymentMethod, string> = {
-  Cash: 'bg-emerald-500',
-  Card: 'bg-blue-500',
-  'QR Pay': 'bg-violet-500',
+const METHOD_BAR: Record<string, string> = {
+  CASH: 'bg-emerald-500',
+  CARD: 'bg-blue-500',
+  KHQR: 'bg-violet-500',
 };
-const STATUS_CLASS: Record<PaymentStatus, string> = {
-  Paid: 'bg-emerald-50 text-emerald-700',
-  Pending: 'bg-amber-50 text-amber-700',
-  Refunded: 'bg-red-50 text-red-600',
-  Failed: 'bg-neutral-100 text-neutral-600',
+const STATUS_CLASS: Record<string, string> = {
+  PAID: 'bg-emerald-50 text-emerald-700',
+  PENDING: 'bg-amber-50 text-amber-700',
+  FAILED: 'bg-neutral-100 text-neutral-600',
+  EXPIRED: 'bg-red-50 text-red-600',
+};
+const STATUS_LABEL: Record<string, string> = {
+  PAID: 'Paid',
+  PENDING: 'Pending',
+  FAILED: 'Failed',
+  EXPIRED: 'Expired',
 };
 
 @Component({
@@ -31,14 +39,20 @@ const STATUS_CLASS: Record<PaymentStatus, string> = {
   imports: [RouterLink, CurrencyPipe, DatePipe],
   templateUrl: './payment-list.html',
 })
-export class PaymentList {
-  private readonly payments = inject(PaymentService).items;
+export class PaymentList implements OnInit {
+  private readonly paymentService = inject(PaymentService);
 
-  protected readonly methods: PaymentMethod[] = ['Cash', 'Card', 'QR Pay'];
-  protected readonly statuses: PaymentStatus[] = ['Paid', 'Pending', 'Refunded', 'Failed'];
+  protected readonly loading = this.paymentService.loading;
+  protected readonly error = this.paymentService.error;
+
+  protected readonly methods: string[] = ['CASH', 'CARD', 'KHQR'];
+  protected readonly statuses: string[] = ['PAID', 'PENDING', 'FAILED', 'EXPIRED'];
+
   protected readonly methodChips = [
     { value: 'all', label: 'All', icon: '' },
-    ...this.methods.map((m) => ({ value: m as string, label: m as string, icon: METHOD_ICON[m] })),
+    { value: 'CASH', label: 'Cash', icon: METHOD_ICON['CASH'] },
+    { value: 'CARD', label: 'Card', icon: METHOD_ICON['CARD'] },
+    { value: 'KHQR', label: 'QR Pay', icon: METHOD_ICON['KHQR'] },
   ];
   protected readonly pageSize = 8;
 
@@ -47,26 +61,46 @@ export class PaymentList {
   protected readonly status = signal('all');
   protected readonly page = signal(1);
 
-  private readonly sumBy = (
-    pred: (p: { method: PaymentMethod; status: PaymentStatus }) => boolean,
-  ) =>
-    this.payments()
-      .filter(pred)
-      .reduce((s, p) => s + p.amount, 0);
+  ngOnInit(): void {
+    void this.paymentService.load();
+  }
 
-  protected readonly collected = computed(() => this.sumBy((p) => p.status === 'Paid'));
-  protected readonly pending = computed(() => this.sumBy((p) => p.status === 'Pending'));
-  protected readonly refunded = computed(() => this.sumBy((p) => p.status === 'Refunded'));
+  // ── View model ──────────────────────────────────────────────────────────
+  private readonly enriched = computed(() =>
+    this.paymentService.items().map((p) => ({
+      ...p,
+      reference: p.transactionRef || `PAY-${p.id}`,
+      customer: `Order #${p.orderId}`,
+      orderNumber: `#${p.orderId}`,
+      methodKey: (p.method || 'KHQR').toUpperCase(),
+      statusKey: (p.status || 'PENDING').toUpperCase(),
+    })),
+  );
+
+  // ── Summary ─────────────────────────────────────────────────────────────
+  private sumByStatus = (status: string) =>
+    computed(() =>
+      this.enriched()
+        .filter((p) => p.statusKey === status)
+        .reduce((s, p) => s + (p.amount ?? 0), 0),
+    );
+
+  protected readonly collected = this.sumByStatus('PAID');
+  protected readonly pending = this.sumByStatus('PENDING');
+  protected readonly refunded = computed(() => 0); // refunds not in current API
 
   protected readonly byMethod = computed(() => {
     const total = this.collected();
     return this.methods.map((m) => {
-      const amount = this.sumBy((p) => p.status === 'Paid' && p.method === m);
+      const amount = this.enriched()
+        .filter((p) => p.statusKey === 'PAID' && p.methodKey === m)
+        .reduce((s, p) => s + (p.amount ?? 0), 0);
       return {
-        method: m,
-        icon: METHOD_ICON[m],
-        tone: METHOD_TONE[m],
-        bar: METHOD_BAR[m],
+        method: this.methodChips.find((c) => c.value === m)?.label ?? m,
+        methodKey: m,
+        icon: METHOD_ICON[m] ?? 'fa-credit-card',
+        tone: METHOD_TONE[m] ?? 'bg-neutral-50 text-neutral-600',
+        bar: METHOD_BAR[m] ?? 'bg-neutral-500',
         amount,
         share: total ? Math.round((amount / total) * 100) : 0,
       };
@@ -74,26 +108,30 @@ export class PaymentList {
   });
 
   protected readonly statusTabs = computed(() => [
-    { value: 'all', label: 'All', count: this.payments().length },
+    { value: 'all', label: 'All', count: this.enriched().length },
     ...this.statuses.map((s) => ({
-      value: s as string,
-      label: s as string,
-      count: this.payments().filter((p) => p.status === s).length,
+      value: s,
+      label: STATUS_LABEL[s] ?? s,
+      count: this.enriched().filter((p) => p.statusKey === s).length,
     })),
   ]);
 
+  // ── Filtering + paging ──────────────────────────────────────────────────
   protected readonly filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
-    return this.payments().filter(
+    const m = this.method();
+    const s = this.status();
+    return this.enriched().filter(
       (p) =>
         (!q ||
           p.reference.toLowerCase().includes(q) ||
           p.customer.toLowerCase().includes(q) ||
-          p.orderNumber.includes(q)) &&
-        (this.method() === 'all' || p.method === this.method()) &&
-        (this.status() === 'all' || p.status === this.status()),
+          p.orderNumber.toLowerCase().includes(q)) &&
+        (m === 'all' || p.methodKey === m) &&
+        (s === 'all' || p.statusKey === s),
     );
   });
+
   protected readonly paged = computed(() =>
     this.filtered().slice((this.page() - 1) * this.pageSize, this.page() * this.pageSize),
   );
@@ -120,9 +158,14 @@ export class PaymentList {
     this.page.set(Math.min(Math.max(1, p), this.pageCount()));
   }
 
-  protected icon = (m: PaymentMethod) => METHOD_ICON[m];
-  protected methodTone = (m: PaymentMethod) => METHOD_TONE[m];
-  protected statusClass = (s: PaymentStatus) => STATUS_CLASS[s];
+  // ── Template helpers ────────────────────────────────────────────────────
+  protected icon = (methodKey: string) => METHOD_ICON[methodKey] ?? 'fa-credit-card';
+  protected methodTone = (methodKey: string) =>
+    METHOD_TONE[methodKey] ?? 'bg-neutral-50 text-neutral-600';
+  protected statusClass = (statusKey: string) =>
+    STATUS_CLASS[statusKey] ?? 'bg-neutral-100 text-neutral-600';
+  protected statusLabel = (statusKey: string) => STATUS_LABEL[statusKey] ?? statusKey;
+
   protected initials(name: string): string {
     return name
       .split(/\s+/)

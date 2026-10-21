@@ -20,6 +20,12 @@
   </div>
 </div>
 
+@if (error()) {
+  <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+    {{ error() }}
+  </div>
+}
+
 <!-- Summary -->
 <div class="mb-6 grid gap-4 lg:grid-cols-3">
   <!-- Hero -->
@@ -179,36 +185,50 @@
               <span class="inline-flex items-center gap-2">
                 <span
                   class="grid size-7 place-items-center rounded-lg text-xs"
-                  [class]="methodTone(p.method)"
-                  ><i class="fa-solid" [class]="icon(p.method)"></i
+                  [class]="methodTone(p.methodKey)"
+                  ><i class="fa-solid" [class]="icon(p.methodKey)"></i
                 ></span>
-                {{ p.method }}
+                {{ p.methodKey }}
               </span>
             </td>
             <td>
               <span
                 class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
-                [class]="statusClass(p.status)"
+                [class]="statusClass(p.statusKey)"
               >
-                <span class="size-1.5 rounded-full bg-current"></span>{{ p.status }}
+                <span class="size-1.5 rounded-full bg-current"></span>{{ statusLabel(p.statusKey) }}
               </span>
             </td>
-            <td class="text-neutral-500">{{ p.paidAt | date: 'MMM d, h:mm a' }}</td>
+            <td class="text-neutral-500">
+              @if (p.paidAt) {
+                {{ p.paidAt | date: 'MMM d, h:mm a' }}
+              } @else {
+                —
+              }
+            </td>
             <td
               class="px-5 text-right font-semibold"
-              [class]="p.status === 'Refunded' ? 'text-red-500' : 'text-neutral-900'"
+              [class]="
+                p.statusKey === 'FAILED' || p.statusKey === 'EXPIRED'
+                  ? 'text-red-500'
+                  : 'text-neutral-900'
+              "
             >
-              {{ p.status === 'Refunded' ? '−' : '' }}{{ p.amount | currency }}
+              {{ p.amount | currency }}
             </td>
           </tr>
         } @empty {
           <tr>
             <td colspan="7" class="py-16 text-center text-neutral-400">
-              <span
-                class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-neutral-100 text-2xl"
-                ><i class="fa-solid fa-credit-card"></i
-              ></span>
-              No payments found
+              @if (loading()) {
+                Loading payments…
+              } @else {
+                <span
+                  class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-neutral-100 text-2xl"
+                  ><i class="fa-solid fa-credit-card"></i
+                ></span>
+                No payments found
+              }
             </td>
           </tr>
         }

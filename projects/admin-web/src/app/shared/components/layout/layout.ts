@@ -5,15 +5,19 @@ import { NAV_SECTIONS } from '../../../core/models/nav-items';
 import { ClickOutside } from '../../directives/click-outside';
 import { Logo } from '../logo/logo';
 import { AuthService } from '../../../core/auth/auth-service';
+import { NotificationService } from '../../../core/services/notification-service';
+import { NotificationToast } from '../notification-toast/notification-toast';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, ClickOutside, Logo],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, ClickOutside, Logo, NotificationToast],
   templateUrl: './layout.html',
 })
 export class Layout {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+
+  protected readonly notifService = inject(NotificationService);
 
   protected readonly sections = NAV_SECTIONS;
 
@@ -37,33 +41,14 @@ export class Layout {
     };
   });
 
+  constructor() {
+    // Start polling for notifications when the layout loads
+    this.notifService.start();
+  }
+
   protected logout(): void {
     this.auth.logout();
   }
-
-  protected readonly notifications = [
-    {
-      icon: 'fa-bag-shopping',
-      tone: 'bg-primary/10 text-primary',
-      title: 'New order #1052',
-      text: 'Charlotte Clark ordered 3 items',
-      time: '5 min ago',
-    },
-    {
-      icon: 'fa-triangle-exclamation',
-      tone: 'bg-amber-100 text-amber-600',
-      title: 'Low stock',
-      text: 'Caramel Syrup is below reorder level',
-      time: '30 min ago',
-    },
-    {
-      icon: 'fa-circle-check',
-      tone: 'bg-emerald-100 text-emerald-600',
-      title: 'Payment received',
-      text: '$12.40 paid by card for #1045',
-      time: '1 hour ago',
-    },
-  ];
 
   protected readonly sidebarClass = computed(
     () =>
@@ -111,5 +96,16 @@ export class Layout {
     return NAV_SECTIONS.flat()
       .filter((item) => item.children?.some((child) => url.startsWith(child.route)))
       .map((item) => item.label);
+  }
+
+  /** Relative time helper used in the notification dropdown */
+  protected timeAgo(date: Date): string {
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} min ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    return `${Math.floor(hours / 24)} day${Math.floor(hours / 24) > 1 ? 's' : ''} ago`;
   }
 }
