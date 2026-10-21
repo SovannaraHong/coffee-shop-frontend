@@ -1,0 +1,337 @@
+<!-- Header -->
+<div class="mb-6 flex items-start justify-between">
+  <div>
+    <h1 class="text-[28px] font-normal leading-tight text-neutral-900">Suppliers</h1>
+    <p class="mt-1 text-[15px] text-neutral-900">Who you buy ingredients from</p>
+  </div>
+  <button
+    type="button"
+    class="inline-flex h-10 items-center gap-2 rounded-xl bg-sky-500 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-sky-600 focus-visible:ring-4 focus-visible:ring-sky-500/30"
+    (click)="openAdd()"
+  >
+    <i class="fa-solid fa-plus text-xs"></i> Add supplier
+  </button>
+</div>
+
+<!-- Summary cards -->
+<div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+  <div class="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+      <p class="text-sm text-neutral-500">Total suppliers</p>
+      <div class="grid size-10 place-items-center rounded-xl bg-sky-50 text-sky-600">
+        <i class="fa-solid fa-truck-field"></i>
+      </div>
+    </div>
+    <p class="mt-2 text-3xl font-semibold text-neutral-900">{{ stats().total }}</p>
+    <p class="mt-0.5 text-xs text-neutral-400">All suppliers</p>
+  </div>
+
+  <div class="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+      <p class="text-sm text-neutral-500">Active</p>
+      <div class="grid size-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+    </div>
+    <p class="mt-2 text-3xl font-semibold text-neutral-900">{{ stats().active }}</p>
+    <p class="mt-0.5 text-xs text-neutral-400">Can receive new orders</p>
+  </div>
+
+  <div class="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+      <p class="text-sm text-neutral-500">Inactive</p>
+      <div class="grid size-10 place-items-center rounded-xl bg-neutral-100 text-neutral-500">
+        <i class="fa-solid fa-circle-pause"></i>
+      </div>
+    </div>
+    <p class="mt-2 text-3xl font-semibold text-neutral-900">{{ stats().inactive }}</p>
+    <p class="mt-0.5 text-xs text-neutral-400">Paused</p>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+  <div class="overflow-x-auto">
+    <div class="inline-flex gap-1 rounded-xl bg-neutral-100 p-1">
+      @for (t of tabs; track t.value) {
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-all"
+          [class]="
+            tab() === t.value
+              ? 'bg-white text-sky-700 shadow-sm'
+              : 'text-neutral-500 hover:text-neutral-800'
+          "
+          (click)="setTab(t.value)"
+        >
+          {{ t.label }}
+          <span
+            class="rounded-full px-2 py-0.5 text-xs font-semibold"
+            [class]="
+              tab() === t.value ? 'bg-sky-100 text-sky-700' : 'bg-neutral-200/70 text-neutral-500'
+            "
+            >{{ tabCount(t.value) }}</span
+          >
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="relative w-full lg:w-80">
+    <i
+      class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-neutral-400"
+    ></i>
+    <input
+      type="text"
+      autocomplete="off"
+      class="h-11 w-full rounded-xl border border-neutral-200 bg-white pl-11 pr-10 text-sm text-neutral-900 shadow-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15"
+      placeholder="Search name, contact, phone, email…"
+      aria-label="Search suppliers"
+      [value]="search()"
+      (input)="setSearch($any($event.target).value)"
+    />
+    @if (search()) {
+      <button
+        type="button"
+        class="absolute right-2.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full bg-neutral-100 text-xs text-neutral-500 transition hover:bg-neutral-200 hover:text-neutral-800"
+        aria-label="Clear search"
+        (click)="setSearch('')"
+      >
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    }
+  </div>
+</div>
+
+<!-- Load error -->
+@if (error() && !showDrawer()) {
+  <div
+    class="mb-4 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    role="alert"
+  >
+    <span
+      ><i class="fa-solid fa-circle-exclamation mr-2"></i>Something went wrong. Please try
+      again.</span
+    >
+    <button type="button" class="font-medium underline" (click)="service.load()">Retry</button>
+  </div>
+}
+
+<!-- Table -->
+<div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[840px] text-left text-sm">
+      <thead class="border-b border-neutral-200 bg-neutral-50/80">
+        <tr class="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+          <th class="px-5 py-3.5">Supplier</th>
+          <th class="px-5 py-3.5">Contact</th>
+          <th class="px-5 py-3.5">Status</th>
+          <th class="px-5 py-3.5">Created</th>
+          <th class="px-5 py-3.5 text-right">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-neutral-100">
+        @if (loading() && !items().length) {
+          @for (n of skeleton; track n) {
+            <tr class="animate-pulse">
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="size-10 rounded-xl bg-neutral-200"></div>
+                  <div class="h-3 w-32 rounded bg-neutral-200"></div>
+                </div>
+              </td>
+              <td class="px-5 py-4"><div class="h-3 w-36 rounded bg-neutral-200"></div></td>
+              <td class="px-5 py-4"><div class="h-6 w-24 rounded-full bg-neutral-200"></div></td>
+              <td class="px-5 py-4"><div class="h-3 w-24 rounded bg-neutral-100"></div></td>
+              <td class="px-5 py-4"><div class="ml-auto h-8 w-20 rounded bg-neutral-100"></div></td>
+            </tr>
+          }
+        } @else {
+          @for (s of paged(); track s.id) {
+            <tr class="transition-colors hover:bg-sky-50/40">
+              <!-- Supplier -->
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="grid size-10 shrink-0 place-items-center rounded-xl bg-sky-50 text-sky-600"
+                  >
+                    <i class="fa-solid fa-truck-field"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="truncate font-medium text-neutral-900">{{ s.name }}</p>
+                    <p class="mt-0.5 truncate text-xs text-neutral-400">
+                      {{ s.address || 'No address' }}
+                    </p>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Contact -->
+              <td class="px-5 py-3.5">
+                <p class="text-neutral-800">{{ s.contactPerson || '-' }}</p>
+                <p class="mt-0.5 text-xs text-neutral-500">{{ s.phone || 'No phone' }}</p>
+                <p class="text-xs text-neutral-400">{{ s.email || 'No email' }}</p>
+              </td>
+
+              <!-- Status -->
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-3">
+                  <button
+                    type="button"
+                    role="switch"
+                    [attr.aria-checked]="s.isActive"
+                    [attr.aria-label]="'Toggle status of ' + s.name"
+                    [disabled]="saving()"
+                    class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                    [class]="s.isActive ? 'bg-sky-500' : 'bg-neutral-300'"
+                    (click)="toggleStatus(s)"
+                  >
+                    <span
+                      class="inline-block size-4 rounded-full bg-white shadow transition-transform"
+                      [class]="s.isActive ? 'translate-x-6' : 'translate-x-1'"
+                    ></span>
+                  </button>
+                  <span
+                    class="text-xs font-medium"
+                    [class]="s.isActive ? 'text-emerald-600' : 'text-neutral-400'"
+                    >{{ s.isActive ? 'Active' : 'Inactive' }}</span
+                  >
+                </div>
+              </td>
+
+              <!-- Created -->
+              <td class="whitespace-nowrap px-5 py-3.5">
+                <p class="text-neutral-700">{{ s.createdAt | date: 'MMM d, y' }}</p>
+                <p class="text-xs text-neutral-400">{{ s.createdAt | date: 'h:mm a' }}</p>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-5 py-3.5">
+                <div class="flex justify-end gap-1.5">
+                  <button
+                    type="button"
+                    class="grid size-9 place-items-center rounded-lg bg-neutral-100 text-neutral-600 transition hover:bg-sky-100 hover:text-sky-700"
+                    [attr.aria-label]="'Edit ' + s.name"
+                    title="Edit"
+                    (click)="openEdit(s)"
+                  >
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="grid size-9 place-items-center rounded-lg bg-red-50 text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                    [attr.aria-label]="'Delete ' + s.name"
+                    title="Delete"
+                    [disabled]="saving()"
+                    (click)="toDelete.set(s)"
+                  >
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="px-5 py-16 text-center">
+                <div
+                  class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-sky-50 text-xl text-sky-500"
+                >
+                  <i class="fa-solid fa-truck-field"></i>
+                </div>
+                <p class="font-medium text-neutral-700">No suppliers found</p>
+                <p class="mt-1 text-sm text-neutral-400">
+                  @if (search() || tab() !== 'all') {
+                    Try a different search or filter.
+                  } @else {
+                    Add your first supplier to start creating purchase orders.
+                  }
+                </p>
+                @if (search() || tab() !== 'all') {
+                  <button
+                    type="button"
+                    class="mt-4 rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+                    (click)="clearFilters()"
+                  >
+                    Clear filters
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="mt-4 inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-600"
+                    (click)="openAdd()"
+                  >
+                    <i class="fa-solid fa-plus text-xs"></i> Add supplier
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer / pagination -->
+  @if (items().length) {
+    <div
+      class="flex items-center justify-between border-t border-neutral-100 bg-neutral-50/60 px-5 py-3"
+    >
+      <span class="text-sm text-neutral-500">
+        Showing <span class="font-semibold text-neutral-700">{{ paged().length }}</span> of
+        <span class="font-semibold text-neutral-700">{{ filtered().length }}</span> suppliers
+      </span>
+
+      <div class="flex overflow-hidden rounded-lg border border-neutral-200 text-sm">
+        <button
+          type="button"
+          class="bg-white px-3.5 py-1.5 text-neutral-600 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="page() === 1"
+          (click)="goTo(page() - 1)"
+        >
+          Previous
+        </button>
+        @for (n of pages(); track n) {
+          <button
+            type="button"
+            class="border-l border-neutral-200 px-3.5 py-1.5"
+            [class]="
+              n === page()
+                ? 'bg-sky-500 text-white'
+                : 'bg-white text-neutral-700 hover:bg-neutral-100'
+            "
+            (click)="goTo(n)"
+          >
+            {{ n }}
+          </button>
+        }
+        <button
+          type="button"
+          class="border-l border-neutral-200 bg-white px-3.5 py-1.5 text-neutral-600 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="page() === pageCount()"
+          (click)="goTo(page() + 1)"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  }
+</div>
+
+<app-supplier-drawer
+  [open]="showDrawer()"
+  [supplier]="editing()"
+  [saving]="saving()"
+  [error]="saveError()"
+  (closed)="closeDrawer()"
+  (saved)="onSaved($event)"
+/>
+
+<app-confirm-dialog
+  [open]="!!toDelete()"
+  title="Delete supplier"
+  [message]="'Are you sure you want to delete ' + toDelete()?.name + '? This cannot be undone.'"
+  confirmLabel="Delete"
+  (confirmed)="confirmDelete()"
+  (cancelled)="toDelete.set(null)"
+/>
