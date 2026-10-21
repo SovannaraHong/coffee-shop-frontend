@@ -104,7 +104,7 @@ export const routes: Routes = [
       {
         path: 'suppliers',
         loadComponent: () =>
-          import('./features/suppliers/supplier-list/supplier-list').then((m) => m.SupplierList),
+          import('./features/supplier/supplier-list/supplier-list').then((m) => m.SupplierList),
       },
       {
         path: 'staff',
