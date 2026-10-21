@@ -11,7 +11,9 @@ import {
   untracked,
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Addon, AddonInput } from '../../../../../../../libs/models/addon/addon';
+
+import { AddonFormValue } from '../../../../../../../libs/models/addon/addon-request.model';
+import { AddonResponse } from '../../../../../../../libs/models/addon/addon-response.model';
 
 @Component({
   selector: 'app-addon-drawer',
@@ -25,25 +27,27 @@ export class AddonDrawer {
   private readonly doc = inject(DOCUMENT);
 
   readonly open = input(false);
-  readonly item = input<Addon | null>(null); // full row (when editing)
+  readonly item = input<AddonResponse | null>(null); // full row (when editing)
+  readonly saving = input(false);
+  readonly error = input<string | null>(null);
 
   readonly closed = output<void>();
-  readonly saved = output<AddonInput>(); // form value only
+  readonly saved = output<AddonFormValue>();
 
   /** Rendered at all (only after the first open) */
   protected readonly mounted = signal(false);
   /** Drives the slide animation */
   protected readonly shown = signal(false);
 
-  private readonly defaults: AddonInput = {
+  private readonly defaults: AddonFormValue = {
     name: '',
     price: 0,
     isActive: true,
   };
 
   protected readonly form = this.fb.group({
-    name: [this.defaults.name, Validators.required],
-    price: [this.defaults.price, Validators.min(0)],
+    name: [this.defaults.name, [Validators.required, Validators.maxLength(100)]],
+    price: [this.defaults.price, [Validators.required, Validators.min(0)]],
     isActive: [this.defaults.isActive],
   });
 
@@ -66,17 +70,13 @@ export class AddonDrawer {
     });
   }
 
-  private load(s: Addon | null): void {
-    this.form.reset(
-      s
-        ? {
-            name: s.name,
-            price: s.price,
-            isActive: s.isActive,
-          }
-        : this.defaults,
-    );
+  private load(s: AddonResponse | null): void {
+    this.form.reset(s ? { name: s.name, price: s.price, isActive: s.isActive } : this.defaults);
     this.form.markAsUntouched();
+  }
+
+  protected setActive(value: boolean): void {
+    this.form.controls.isActive.setValue(value);
   }
 
   protected submit(): void {
