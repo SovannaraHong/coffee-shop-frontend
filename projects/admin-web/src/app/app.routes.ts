@@ -48,11 +48,9 @@ export const routes: Routes = [
           import('./features/recipe/recipe-list/recipe-list').then((m) => m.RecipeList),
       },
 
-      {
-        path: 'inventory',
-        loadComponent: () =>
-          import('./features/inventory/inventory-list/inventory-list').then((m) => m.InventoryList),
-      },
+      // Old standalone page: it needs an add-on id, so send people to the add-ons list.
+      { path: 'addon-ingredient', pathMatch: 'full', redirectTo: 'addons' },
+
       {
         path: 'inventory-transaction',
         loadComponent: () =>
