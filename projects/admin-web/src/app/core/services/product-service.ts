@@ -1,7 +1,4 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { Product } from '../models/product';
-import { PRODUCTS } from '../data/mock-data';
-import { InMemoryStore } from './in-memory-store';
 import { ProductApiService } from '../../../../../../libs/api/product/product.service';
 import { ProductResponse } from '../../../../../../libs/models/product/product-response.model';
 import { firstValueFrom } from 'rxjs';

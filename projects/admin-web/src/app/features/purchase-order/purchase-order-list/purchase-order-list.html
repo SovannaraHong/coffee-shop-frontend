@@ -1,0 +1,447 @@
+<app-page-header
+  title="Purchase orders"
+  subtitle="Order ingredients from suppliers and receive them into stock"
+>
+  <div class="flex gap-2">
+    <button
+      type="button"
+      class="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:opacity-60"
+      [disabled]="service.loading()"
+      (click)="service.load()"
+    >
+      <i class="fa-solid fa-rotate text-xs" [class.fa-spin]="service.loading()"></i> Refresh
+    </button>
+    <button
+      type="button"
+      class="inline-flex h-10 items-center gap-2 rounded-xl bg-sky-500 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-sky-600 focus-visible:ring-4 focus-visible:ring-sky-500/30"
+      (click)="openAdd()"
+    >
+      <i class="fa-solid fa-plus text-xs"></i> New purchase order
+    </button>
+  </div>
+</app-page-header>
+
+<!-- Summary cards -->
+<div class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+  <button
+    type="button"
+    class="flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-4 text-left shadow-sm transition hover:border-amber-300"
+    (click)="setStatus('pending')"
+  >
+    <span class="grid size-12 place-items-center rounded-xl bg-amber-50 text-lg text-amber-600">
+      <i class="fa-regular fa-clock"></i>
+    </span>
+    <span>
+      <span class="block text-2xl font-semibold text-neutral-900">{{
+        counts()['pending'] ?? 0
+      }}</span>
+      <span class="text-xs text-neutral-500">Waiting to be ordered</span>
+    </span>
+  </button>
+
+  <button
+    type="button"
+    class="flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-4 text-left shadow-sm transition hover:border-sky-300"
+    (click)="setStatus('ordered')"
+  >
+    <span class="grid size-12 place-items-center rounded-xl bg-sky-50 text-lg text-sky-600">
+      <i class="fa-solid fa-truck-fast"></i>
+    </span>
+    <span>
+      <span class="block text-2xl font-semibold text-neutral-900">{{
+        counts()['ordered'] ?? 0
+      }}</span>
+      <span class="text-xs text-neutral-500">On the way</span>
+    </span>
+  </button>
+
+  <button
+    type="button"
+    class="flex items-center gap-4 rounded-2xl border border-neutral-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-300"
+    (click)="setStatus('received')"
+  >
+    <span class="grid size-12 place-items-center rounded-xl bg-emerald-50 text-lg text-emerald-600">
+      <i class="fa-solid fa-box-open"></i>
+    </span>
+    <span>
+      <span class="block text-2xl font-semibold text-neutral-900">{{
+        counts()['received'] ?? 0
+      }}</span>
+      <span class="text-xs text-neutral-500">Received into stock</span>
+    </span>
+  </button>
+
+  <div class="flex items-center gap-4 rounded-2xl bg-neutral-900 p-4 text-white shadow-sm">
+    <span class="grid size-12 place-items-center rounded-xl bg-white/10 text-lg text-sky-300">
+      <i class="fa-solid fa-sack-dollar"></i>
+    </span>
+    <span>
+      <span class="block text-2xl font-semibold">{{ totalSpend() | currency }}</span>
+      <span class="text-xs text-neutral-400">Total purchases (not cancelled)</span>
+    </span>
+  </div>
+</div>
+
+<!-- Table card -->
+<div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+  <div
+    class="flex flex-col gap-3 border-b border-neutral-200 p-4 xl:flex-row xl:items-center xl:justify-between"
+  >
+    <!-- Status tabs -->
+    <div class="max-w-full overflow-x-auto">
+      <div class="inline-flex gap-1 whitespace-nowrap rounded-xl bg-neutral-100 p-1 text-sm">
+        @for (t of tabs; track t.value) {
+          <button
+            type="button"
+            class="flex items-center gap-2 rounded-lg px-3.5 py-2 font-medium transition-all"
+            [class]="
+              status() === t.value
+                ? 'bg-white text-sky-700 shadow-sm'
+                : 'text-neutral-500 hover:text-neutral-800'
+            "
+            (click)="setStatus(t.value)"
+          >
+            {{ t.label }}
+            <span
+              class="rounded-full px-2 py-0.5 text-xs font-semibold"
+              [class]="
+                status() === t.value
+                  ? 'bg-sky-100 text-sky-700'
+                  : 'bg-neutral-200/70 text-neutral-500'
+              "
+              >{{ counts()[t.value] ?? 0 }}</span
+            >
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="relative w-full xl:w-80">
+      <i
+        class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-neutral-400"
+      ></i>
+      <input
+        type="text"
+        autocomplete="off"
+        placeholder="Search PO number, supplier, ingredient…"
+        aria-label="Search purchase orders"
+        class="h-11 w-full rounded-xl border border-neutral-200 bg-white pl-11 pr-10 text-sm outline-none transition placeholder:text-neutral-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15"
+        [value]="search()"
+        (input)="setSearch($any($event.target).value)"
+      />
+      @if (search()) {
+        <button
+          type="button"
+          class="absolute right-2.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full bg-neutral-100 text-xs text-neutral-500 transition hover:bg-neutral-200"
+          aria-label="Clear search"
+          (click)="setSearch('')"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (service.error()) {
+    <div
+      class="flex items-center justify-between gap-3 border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-700"
+      role="alert"
+    >
+      <span
+        ><i class="fa-solid fa-circle-exclamation mr-2"></i>Something went wrong. The list was
+        refreshed, please check the order and try again.</span
+      >
+      <button type="button" class="font-medium underline" (click)="service.load()">Retry</button>
+    </div>
+  }
+
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[900px] text-left text-sm">
+      <thead class="border-b border-neutral-200 bg-neutral-50/80">
+        <tr class="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+          <th class="px-5 py-3.5">Order</th>
+          <th class="px-5 py-3.5">Supplier</th>
+          <th class="px-5 py-3.5">Items</th>
+          <th class="px-5 py-3.5">Total</th>
+          <th class="px-5 py-3.5">Progress</th>
+          <th class="px-5 py-3.5">Status</th>
+          <th class="px-5 py-3.5 text-center">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y divide-neutral-100">
+        @if (service.loading() && !service.items().length) {
+          @for (n of skeleton; track n) {
+            <tr class="animate-pulse">
+              <td class="px-5 py-5">
+                <div class="flex items-center gap-3">
+                  <div class="size-11 rounded-xl bg-neutral-200"></div>
+                  <div class="space-y-2">
+                    <div class="h-3 w-20 rounded bg-neutral-200"></div>
+                    <div class="h-3 w-24 rounded bg-neutral-100"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-5 py-5"><div class="h-3 w-28 rounded bg-neutral-200"></div></td>
+              <td class="px-5 py-5"><div class="h-3 w-36 rounded bg-neutral-100"></div></td>
+              <td class="px-5 py-5"><div class="h-3 w-16 rounded bg-neutral-200"></div></td>
+              <td class="px-5 py-5"><div class="h-2 w-32 rounded bg-neutral-200"></div></td>
+              <td class="px-5 py-5"><div class="h-6 w-20 rounded-full bg-neutral-200"></div></td>
+              <td class="px-5 py-5"><div class="mx-auto h-8 w-24 rounded bg-neutral-100"></div></td>
+            </tr>
+          }
+        } @else {
+          @for (o of paged(); track o.id) {
+            <tr class="transition-colors hover:bg-sky-50/40">
+              <!-- Order -->
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="grid size-11 shrink-0 place-items-center rounded-xl"
+                    [class]="meta[stage(o)].tile"
+                  >
+                    <i [class]="meta[stage(o)].icon"></i>
+                  </div>
+                  <div class="min-w-0">
+                    <button
+                      type="button"
+                      class="font-semibold text-neutral-900 transition hover:text-sky-600"
+                      (click)="selectedId.set(o.id)"
+                    >
+                      PO-{{ o.id }}
+                    </button>
+                    <p class="mt-0.5 text-xs text-neutral-400">
+                      {{ o.orderDate | date: 'MMM d, y · h:mm a' }}
+                    </p>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Supplier -->
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-2.5">
+                  <span
+                    class="grid size-8 shrink-0 place-items-center rounded-full bg-neutral-100 text-[11px] font-semibold text-neutral-600"
+                    >{{ initials(o.supplierName) }}</span
+                  >
+                  <p class="truncate font-medium text-neutral-900">{{ o.supplierName || '—' }}</p>
+                </div>
+              </td>
+
+              <!-- Items -->
+              <td class="px-5 py-3.5">
+                <p class="max-w-[220px] truncate text-neutral-700">{{ itemSummary(o) }}</p>
+                <p class="mt-0.5 text-xs text-neutral-400">{{ o.details?.length ?? 0 }} items</p>
+              </td>
+
+              <!-- Total -->
+              <td class="px-5 py-3.5">
+                <span class="font-semibold tabular-nums text-neutral-900">{{
+                  o.totalAmount | currency
+                }}</span>
+              </td>
+
+              <!-- Progress -->
+              <td class="px-5 py-3.5">
+                <div
+                  class="flex w-32 gap-1"
+                  role="img"
+                  [attr.aria-label]="'Progress: ' + meta[stage(o)].label"
+                >
+                  @for (s of stages; track s; let i = $index) {
+                    <span
+                      class="h-1.5 flex-1 rounded-full transition-colors duration-500"
+                      [class]="
+                        stage(o) === 'cancelled'
+                          ? 'bg-red-200'
+                          : i <= stepIndex(o)
+                            ? meta[stage(o)].dot
+                            : 'bg-neutral-200'
+                      "
+                    ></span>
+                  }
+                </div>
+              </td>
+
+              <!-- Status -->
+              <td class="px-5 py-3.5">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
+                  [class]="meta[stage(o)].badge"
+                >
+                  <span class="size-1.5 rounded-full" [class]="meta[stage(o)].dot"></span>
+                  {{ meta[stage(o)].label }}
+                </span>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-5 py-3.5">
+                <div class="flex items-center justify-center gap-1.5">
+                  @if (nextAction(o); as next) {
+                    <button
+                      type="button"
+                      class="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg bg-sky-500 px-3 text-sm font-medium text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+                      [disabled]="busyId() !== null"
+                      (click)="run(o, next.kind)"
+                    >
+                      @if (busyId() === o.id) {
+                        <i class="fa-solid fa-spinner fa-spin text-xs"></i>
+                      } @else {
+                        <i [class]="next.icon" class="text-xs"></i>
+                      }
+                      {{ next.label }}
+                    </button>
+                  }
+
+                  <button
+                    type="button"
+                    class="grid size-9 place-items-center rounded-lg text-neutral-500 transition hover:bg-sky-100 hover:text-sky-700"
+                    title="View order"
+                    [attr.aria-label]="'View purchase order ' + o.id"
+                    (click)="selectedId.set(o.id)"
+                  >
+                    <i class="fa-regular fa-eye"></i>
+                  </button>
+
+                  @if (canEdit(o)) {
+                    <button
+                      type="button"
+                      class="grid size-9 place-items-center rounded-lg text-neutral-500 transition hover:bg-sky-100 hover:text-sky-700 disabled:opacity-50"
+                      title="Edit order"
+                      [attr.aria-label]="'Edit purchase order ' + o.id"
+                      [disabled]="busyId() !== null"
+                      (click)="openEdit(o)"
+                    >
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                  }
+
+                  @if (canCancel(o)) {
+                    <button
+                      type="button"
+                      class="grid size-9 place-items-center rounded-lg text-neutral-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                      title="Cancel order"
+                      [attr.aria-label]="'Cancel purchase order ' + o.id"
+                      [disabled]="busyId() !== null"
+                      (click)="toCancel.set(o)"
+                    >
+                      <i class="fa-solid fa-ban"></i>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="px-5 py-16 text-center">
+                <div
+                  class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-sky-50 text-xl text-sky-500"
+                >
+                  <i class="fa-solid fa-truck-ramp-box"></i>
+                </div>
+                <p class="font-medium text-neutral-700">No purchase orders found</p>
+                <p class="mt-1 text-sm text-neutral-400">
+                  @if (search() || status() !== 'all') {
+                    Try a different search or status.
+                  } @else {
+                    Create your first purchase order to restock ingredients.
+                  }
+                </p>
+                @if (search() || status() !== 'all') {
+                  <button
+                    type="button"
+                    class="mt-4 rounded-lg border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+                    (click)="clearFilters()"
+                  >
+                    Clear filters
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="mt-4 inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-600"
+                    (click)="openAdd()"
+                  >
+                    <i class="fa-solid fa-plus text-xs"></i> New purchase order
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer / pagination -->
+  <div
+    class="flex flex-col gap-3 border-t border-neutral-100 bg-neutral-50/60 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
+  >
+    <span class="text-xs text-neutral-500">
+      Showing <span class="font-semibold text-neutral-700">{{ paged().length }}</span> of
+      <span class="font-semibold text-neutral-700">{{ filtered().length }}</span> orders
+    </span>
+    @if (pageCount() > 1) {
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          class="h-8 rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-50"
+          [disabled]="page() === 1"
+          (click)="goTo(page() - 1)"
+        >
+          Previous
+        </button>
+        @for (n of pages(); track n) {
+          <button
+            type="button"
+            class="size-8 rounded-lg text-sm font-medium transition"
+            [class]="
+              n === page()
+                ? 'bg-sky-500 text-white'
+                : 'border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-100'
+            "
+            (click)="goTo(n)"
+          >
+            {{ n }}
+          </button>
+        }
+        <button
+          type="button"
+          class="h-8 rounded-lg border border-neutral-200 bg-white px-3 text-sm text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-50"
+          [disabled]="page() === pageCount()"
+          (click)="goTo(page() + 1)"
+        >
+          Next
+        </button>
+      </div>
+    }
+  </div>
+</div>
+
+<app-purchase-order-detail-modal
+  [order]="selected()"
+  [busy]="busyId() !== null"
+  (closed)="selectedId.set(null)"
+  (action)="selected() && run(selected()!, $event)"
+  (cancelOrder)="selected() && toCancel.set(selected())"
+/>
+
+<app-purchase-order-drawer
+  [open]="showForm()"
+  [order]="editing()"
+  [suppliers]="service.suppliers()"
+  [ingredients]="service.ingredients()"
+  [saving]="service.saving()"
+  [error]="service.error() ? 'Could not save. Please check the details and try again.' : null"
+  (closed)="showForm.set(false)"
+  (saved)="save($event)"
+/>
+
+<app-confirm-dialog
+  [open]="!!toCancel()"
+  title="Cancel purchase order"
+  [message]="'Cancel PO-' + toCancel()?.id + '? This cannot be undone.'"
+  confirmLabel="Cancel order"
+  (confirmed)="confirmCancel()"
+  (cancelled)="toCancel.set(null)"
+/>

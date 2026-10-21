@@ -1,0 +1,251 @@
+@if (mounted()) {
+  <div class="fixed inset-0 z-[100]" [class.pointer-events-none]="!open()">
+    <!-- Backdrop -->
+    <div
+      class="absolute inset-0 bg-neutral-900/40 backdrop-blur-[2px] transition-opacity duration-300"
+      [class]="shown() ? 'opacity-100' : 'opacity-0'"
+      (click)="closed.emit()"
+    ></div>
+
+    <!-- Panel -->
+    <aside
+      class="absolute right-0 top-0 flex h-full flex-col bg-neutral-50 shadow-2xl"
+      style="
+        width: min(720px, 100vw);
+        transform: translateX(100%);
+        visibility: hidden;
+        transition:
+          transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
+          visibility 350ms;
+      "
+      [style.transform]="shown() ? 'translateX(0)' : 'translateX(100%)'"
+      [style.visibility]="shown() ? 'visible' : 'hidden'"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="order() ? 'Edit purchase order' : 'New purchase order'"
+    >
+      <!-- Header -->
+      <div class="flex items-center gap-4 border-b border-neutral-200 bg-white px-8 py-5">
+        <div
+          class="grid size-11 shrink-0 place-items-center rounded-xl bg-sky-50 text-lg text-sky-600"
+        >
+          <i [class]="order() ? 'fa-solid fa-pen-to-square' : 'fa-solid fa-truck-ramp-box'"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <h2 class="truncate text-lg font-semibold text-neutral-900">
+            {{ order() ? 'Edit PO-' + order()!.id : 'New purchase order' }}
+          </h2>
+          <p class="text-sm text-neutral-500">
+            {{
+              order()
+                ? 'Change the supplier or ingredients'
+                : 'Choose a supplier and add the ingredients to buy'
+            }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="grid size-9 shrink-0 place-items-center rounded-lg text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+          aria-label="Close"
+          (click)="closed.emit()"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <form
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        novalidate
+        id="poForm"
+        class="flex-1 space-y-5 overflow-y-auto px-8 py-6"
+      >
+        @if (error(); as err) {
+          <div
+            class="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+            <span>{{ err }}</span>
+          </div>
+        }
+
+        <!-- Supplier -->
+        <section class="rounded-2xl border border-neutral-200 bg-white p-5">
+          <h3 class="mb-4 text-xs font-semibold uppercase tracking-wide text-neutral-400">
+            Supplier
+          </h3>
+          <label for="po-supplier" class="mb-1.5 block text-sm font-medium text-neutral-700">
+            Supplier <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <i
+              class="fa-solid fa-truck pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-neutral-400"
+            ></i>
+            <select
+              id="po-supplier"
+              formControlName="supplierId"
+              class="h-11 w-full appearance-none rounded-lg border bg-white pl-10 pr-10 text-[15px] outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15"
+              [class]="invalid(form.controls.supplierId) ? 'border-red-400' : 'border-neutral-200'"
+            >
+              <option [ngValue]="0" disabled>Select a supplier…</option>
+              @for (s of suppliers(); track s.id) {
+                <option [ngValue]="s.id">{{ s.name }}</option>
+              }
+            </select>
+            <i
+              class="fa-solid fa-chevron-down pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+            ></i>
+          </div>
+          @if (invalid(form.controls.supplierId)) {
+            <p class="mt-1.5 text-xs text-red-500">Please choose a supplier.</p>
+          }
+        </section>
+
+        <!-- Lines -->
+        <section class="rounded-2xl border border-neutral-200 bg-white p-5">
+          <div class="mb-4 flex items-center justify-between">
+            <h3 class="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+              Ingredients
+            </h3>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-700 transition hover:bg-sky-100"
+              (click)="addLine()"
+            >
+              <i class="fa-solid fa-plus text-xs"></i> Add line
+            </button>
+          </div>
+
+          <div formArrayName="lines" class="space-y-3">
+            <!-- IMPORTANT: track the control itself, not $index -->
+            @for (line of form.controls.lines.controls; track line; let i = $index) {
+              <div
+                [formGroupName]="i"
+                class="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4"
+              >
+                <div class="grid gap-3 sm:grid-cols-6">
+                  <!-- Ingredient -->
+                  <div class="sm:col-span-6">
+                    <label class="mb-1 block text-xs font-medium text-neutral-600"
+                      >Ingredient</label
+                    >
+                    <select
+                      formControlName="ingredientId"
+                      class="h-10 w-full rounded-lg border bg-white px-3 text-sm outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15"
+                      [class]="
+                        invalid(line.controls.ingredientId)
+                          ? 'border-red-400'
+                          : 'border-neutral-200'
+                      "
+                    >
+                      <option [ngValue]="0" disabled>Select an ingredient…</option>
+                      @for (ing of ingredients(); track ing.id) {
+                        <option [ngValue]="ing.id">{{ ing.name }} ({{ ing.unit }})</option>
+                      }
+                    </select>
+                  </div>
+
+                  <!-- Quantity -->
+                  <div class="sm:col-span-2">
+                    <label class="mb-1 block text-xs font-medium text-neutral-600">Quantity</label>
+                    <div class="relative">
+                      <input
+                        type="number"
+                        step="any"
+                        min="0"
+                        formControlName="quantity"
+                        class="h-10 w-full rounded-lg border bg-white pl-3 pr-12 text-sm tabular-nums outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15"
+                        [class]="
+                          invalid(line.controls.quantity) ? 'border-red-400' : 'border-neutral-200'
+                        "
+                      />
+                      @if (unitOf(i)) {
+                        <span
+                          class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded bg-sky-50 px-1.5 py-0.5 text-[11px] font-semibold text-sky-700"
+                          >{{ unitOf(i) }}</span
+                        >
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Unit cost -->
+                  <div class="sm:col-span-2">
+                    <label class="mb-1 block text-xs font-medium text-neutral-600">Unit cost</label>
+                    <div class="relative">
+                      <i
+                        class="fa-solid fa-dollar-sign pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+                      ></i>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        formControlName="unitCost"
+                        class="h-10 w-full rounded-lg border bg-white pl-7 pr-3 text-sm tabular-nums outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15"
+                        [class]="
+                          invalid(line.controls.unitCost) ? 'border-red-400' : 'border-neutral-200'
+                        "
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Subtotal + remove -->
+                  <div class="flex items-end justify-between gap-2 sm:col-span-2">
+                    <div>
+                      <p class="mb-1 text-xs font-medium text-neutral-600">Subtotal</p>
+                      <p class="h-10 content-center font-semibold tabular-nums text-neutral-900">
+                        {{ lineTotal(i) | currency }}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="grid size-10 place-items-center rounded-lg text-neutral-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                      aria-label="Remove line"
+                      [disabled]="form.controls.lines.length === 1"
+                      (click)="removeLine(i)"
+                    >
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Order total -->
+          <div
+            class="mt-4 flex items-center justify-between rounded-xl bg-neutral-900 px-4 py-3 text-white"
+          >
+            <span class="text-sm text-neutral-300">Order total</span>
+            <span class="text-lg font-semibold tabular-nums">{{ total() | currency }}</span>
+          </div>
+        </section>
+      </form>
+
+      <!-- Footer -->
+      <div class="flex justify-end gap-3 border-t border-neutral-200 bg-white px-8 py-4">
+        <button
+          type="button"
+          class="h-11 min-w-32 rounded-lg border border-neutral-300 bg-white px-6 text-[15px] font-medium text-neutral-700 transition hover:bg-neutral-50"
+          (click)="closed.emit()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          form="poForm"
+          [disabled]="saving()"
+          class="h-11 min-w-44 rounded-lg bg-sky-500 px-6 text-[15px] font-medium text-white shadow-sm transition hover:bg-sky-600 focus-visible:ring-4 focus-visible:ring-sky-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          @if (saving()) {
+            <i class="fa-solid fa-spinner fa-spin mr-2 text-xs"></i>Saving…
+          } @else {
+            <i class="fa-solid fa-check mr-2 text-xs"></i
+            >{{ order() ? 'Save changes' : 'Create order' }}
+          }
+        </button>
+      </div>
+    </aside>
+  </div>
+}

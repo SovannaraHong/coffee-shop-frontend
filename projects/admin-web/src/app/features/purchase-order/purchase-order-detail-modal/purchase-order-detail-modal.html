@@ -1,0 +1,240 @@
+@if (order(); as o) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <!-- Backdrop -->
+    <div
+      class="absolute inset-0 bg-neutral-900/40 backdrop-blur-[2px] transition-opacity duration-300"
+      [class]="shown() ? 'opacity-100' : 'opacity-0'"
+      (click)="closed.emit()"
+    ></div>
+
+    <!-- Dialog -->
+    <div
+      class="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-neutral-50 shadow-2xl transition-all duration-300"
+      [class]="shown() ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'Purchase order ' + o.id"
+    >
+      <!-- Header -->
+      <div class="flex items-center gap-4 border-b border-neutral-200 bg-white px-6 py-5">
+        <div
+          class="grid size-12 shrink-0 place-items-center rounded-xl text-lg"
+          [class]="meta[stage()].tile"
+        >
+          <i [class]="meta[stage()].icon"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="text-lg font-semibold text-neutral-900">Purchase order PO-{{ o.id }}</h2>
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset"
+              [class]="meta[stage()].badge"
+            >
+              <span class="size-1.5 rounded-full" [class]="meta[stage()].dot"></span>
+              {{ meta[stage()].label }}
+            </span>
+          </div>
+          <p class="mt-0.5 text-sm text-neutral-500">
+            {{ o.orderDate | date: 'EEEE, MMM d, y · h:mm a' }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="grid size-9 shrink-0 place-items-center rounded-lg text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+          aria-label="Close"
+          (click)="closed.emit()"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+        <!-- Progress -->
+        <section class="rounded-2xl border border-neutral-200 bg-white p-5">
+          @if (stage() === 'cancelled') {
+            <div class="flex items-center gap-3 text-sm text-red-600">
+              <i class="fa-solid fa-ban"></i>
+              This purchase order was cancelled.
+            </div>
+          } @else {
+            <ol class="flex items-center">
+              @for (s of stages; track s; let i = $index; let last = $last) {
+                <li class="flex items-center" [class.flex-1]="!last">
+                  <div class="flex flex-col items-center gap-1.5">
+                    <span
+                      class="grid size-8 place-items-center rounded-full text-xs font-semibold transition-colors"
+                      [class]="
+                        i <= stepIndex()
+                          ? 'bg-sky-500 text-white'
+                          : 'bg-neutral-100 text-neutral-400'
+                      "
+                    >
+                      @if (i < stepIndex() || stage() === 'received') {
+                        <i class="fa-solid fa-check"></i>
+                      } @else {
+                        {{ i + 1 }}
+                      }
+                    </span>
+                    <span
+                      class="text-xs font-medium"
+                      [class]="i <= stepIndex() ? 'text-neutral-900' : 'text-neutral-400'"
+                      >{{ stepLabels[s] }}</span
+                    >
+                  </div>
+                  @if (!last) {
+                    <span
+                      class="mx-2 mb-5 h-0.5 flex-1 rounded-full transition-colors"
+                      [class]="i < stepIndex() ? 'bg-sky-500' : 'bg-neutral-200'"
+                    ></span>
+                  }
+                </li>
+              }
+            </ol>
+          }
+        </section>
+
+        <!-- Info cards -->
+        <div class="grid gap-3 sm:grid-cols-3">
+          <div class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <p class="text-xs text-neutral-500">Supplier</p>
+            <p class="mt-1 flex items-center gap-2 font-semibold text-neutral-900">
+              <i class="fa-solid fa-truck text-sky-500"></i>
+              <span class="truncate">{{ o.supplierName || '—' }}</span>
+            </p>
+          </div>
+          <div class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <p class="text-xs text-neutral-500">Items</p>
+            <p class="mt-1 font-semibold text-neutral-900">
+              {{ itemCount() }} lines · {{ totalQuantity() | number: '1.0-3' }} total qty
+            </p>
+          </div>
+          <div class="rounded-2xl border border-neutral-200 bg-white p-4">
+            <p class="text-xs text-neutral-500">Total amount</p>
+            <p class="mt-1 text-lg font-semibold tabular-nums text-neutral-900">
+              {{ o.totalAmount | currency }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Items -->
+        <section class="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+          <h3
+            class="border-b border-neutral-100 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-neutral-400"
+          >
+            Ingredients
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[480px] text-left text-sm">
+              <thead class="bg-neutral-50/80 text-xs text-neutral-500">
+                <tr>
+                  <th class="px-5 py-2.5 font-medium">Ingredient</th>
+                  <th class="px-5 py-2.5 text-right font-medium">Quantity</th>
+                  <th class="px-5 py-2.5 text-right font-medium">Unit cost</th>
+                  <th class="px-5 py-2.5 text-right font-medium">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-neutral-100">
+                @for (d of o.details; track d.id) {
+                  <tr>
+                    <td class="px-5 py-3">
+                      <div class="flex items-center gap-3">
+                        <span
+                          class="grid size-8 shrink-0 place-items-center rounded-lg bg-sky-50 text-xs text-sky-600"
+                          ><i class="fa-solid fa-wheat-awn"></i
+                        ></span>
+                        <span class="font-medium text-neutral-900">{{ d.ingredientName }}</span>
+                      </div>
+                    </td>
+                    <td class="px-5 py-3 text-right tabular-nums text-neutral-700">
+                      {{ d.quantity | number: '1.0-3' }}
+                    </td>
+                    <td class="px-5 py-3 text-right tabular-nums text-neutral-700">
+                      {{ d.unitCost | currency }}
+                    </td>
+                    <td class="px-5 py-3 text-right font-semibold tabular-nums text-neutral-900">
+                      {{ d.subtotal | currency }}
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="4" class="px-5 py-8 text-center text-neutral-400">No items</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr class="border-t border-neutral-200 bg-neutral-50/60">
+                  <td colspan="3" class="px-5 py-3 text-right text-sm font-medium text-neutral-600">
+                    Total
+                  </td>
+                  <td
+                    class="px-5 py-3 text-right text-base font-semibold tabular-nums text-neutral-900"
+                  >
+                    {{ o.totalAmount | currency }}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </section>
+
+        @if (stage() === 'ordered') {
+          <p class="flex items-start gap-2 rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-800">
+            <i class="fa-solid fa-circle-info mt-0.5"></i>
+            When you mark this order as received, the quantities are added to ingredient stock.
+          </p>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="flex flex-wrap justify-end gap-3 border-t border-neutral-200 bg-white px-6 py-4">
+        @if (stage() === 'pending' || stage() === 'ordered') {
+          <button
+            type="button"
+            class="mr-auto h-10 rounded-lg px-4 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+            [disabled]="busy()"
+            (click)="cancelOrder.emit()"
+          >
+            <i class="fa-solid fa-ban mr-1.5 text-xs"></i>Cancel order
+          </button>
+        }
+        <button
+          type="button"
+          class="h-10 rounded-lg border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+          (click)="closed.emit()"
+        >
+          Close
+        </button>
+        @if (stage() === 'pending') {
+          <button
+            type="button"
+            class="h-10 rounded-lg bg-sky-500 px-5 text-sm font-medium text-white shadow-sm transition hover:bg-sky-600 disabled:opacity-60"
+            [disabled]="busy()"
+            (click)="action.emit('order')"
+          >
+            @if (busy()) {
+              <i class="fa-solid fa-spinner fa-spin mr-1.5 text-xs"></i>
+            } @else {
+              <i class="fa-solid fa-paper-plane mr-1.5 text-xs"></i>
+            }
+            Place order
+          </button>
+        } @else if (stage() === 'ordered') {
+          <button
+            type="button"
+            class="h-10 rounded-lg bg-emerald-500 px-5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-600 disabled:opacity-60"
+            [disabled]="busy()"
+            (click)="action.emit('receive')"
+          >
+            @if (busy()) {
+              <i class="fa-solid fa-spinner fa-spin mr-1.5 text-xs"></i>
+            } @else {
+              <i class="fa-solid fa-box-open mr-1.5 text-xs"></i>
+            }
+            Mark as received
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}

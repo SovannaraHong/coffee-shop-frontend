@@ -66,6 +66,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'purchase-orders',
+        loadComponent: () =>
+          import('./features/purchase-order/purchase-order-list/purchase-order-list').then(
+            (m) => m.PurchaseOrderList,
+          ),
+      },
+      {
         path: 'ingredients',
         loadComponent: () =>
           import('./features/ingredient/ingredient-list/ingredient-list').then(
