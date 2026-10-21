@@ -59,6 +59,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'stock-adjustment',
+        loadComponent: () =>
+          import('./features/stock-adjustment/stock-adjustment-list/stock-adjustment-list').then(
+            (m) => m.StockAdjustmentList,
+          ),
+      },
+      {
         path: 'ingredients',
         loadComponent: () =>
           import('./features/ingredient/ingredient-list/ingredient-list').then(
