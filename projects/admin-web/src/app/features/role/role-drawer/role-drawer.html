@@ -1,0 +1,340 @@
+@if (mounted()) {
+  <div class="fixed inset-0 z-[100]" [class.pointer-events-none]="!open()">
+    <!-- Backdrop -->
+    <div
+      class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] transition-opacity duration-300"
+      [class.opacity-100]="shown()"
+      [class.opacity-0]="!shown()"
+      (click)="requestClose()"
+    ></div>
+
+    <!-- Drawer -->
+    <aside
+      class="absolute right-0 top-0 flex h-full flex-col bg-white shadow-2xl"
+      style="
+        width: min(960px, 100vw);
+        transform: translateX(100%);
+        visibility: hidden;
+        transition:
+          transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
+          visibility 350ms;
+      "
+      [style.transform]="shown() ? 'translateX(0)' : 'translateX(100%)'"
+      [style.visibility]="shown() ? 'visible' : 'hidden'"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Role form"
+    >
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-slate-200 px-8 py-5">
+        <div>
+          <h2 class="text-xl font-medium text-slate-900">
+            {{ isEdit() ? 'Edit role' : 'Add role' }}
+          </h2>
+          <p class="mt-0.5 text-sm text-slate-500">Role name and the permissions it grants</p>
+        </div>
+
+        <button
+          type="button"
+          aria-label="Close"
+          class="grid size-9 place-items-center rounded-lg bg-slate-100 text-slate-600 transition hover:bg-slate-200 disabled:opacity-50"
+          [disabled]="saving()"
+          (click)="requestClose()"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form
+        id="roleForm"
+        (submit)="$event.preventDefault(); submit()"
+        novalidate
+        class="flex min-h-0 flex-1 flex-col overflow-y-auto md:overflow-hidden"
+      >
+        <!-- Name + errors -->
+        <div class="space-y-4 px-8 py-5">
+          @if (error() || formError()) {
+            <div
+              class="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+              role="alert"
+            >
+              <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+              <span>{{ error() || formError() }}</span>
+            </div>
+          }
+
+          <div class="max-w-md">
+            <label for="r-name" class="mb-1.5 block text-sm font-medium text-slate-700">
+              Role name
+            </label>
+            <input
+              id="r-name"
+              type="text"
+              placeholder="e.g. CASHIER"
+              maxlength="100"
+              class="h-[42px] w-full rounded-lg border border-slate-200 px-3.5 text-[15px] outline-none placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+              [value]="name()"
+              [disabled]="isEdit()"
+              (input)="name.set($any($event.target).value)"
+              (blur)="nameTouched.set(true)"
+            />
+            @if (isEdit()) {
+              <p class="mt-1 text-xs text-slate-400">
+                Role names can't be changed. You can still edit its permissions.
+              </p>
+            } @else if (nameTouched() && nameInvalid()) {
+              <p class="mt-1 text-xs text-rose-500">Name is required.</p>
+            }
+          </div>
+        </div>
+
+        <!-- Permission picker -->
+        <div class="flex min-h-[420px] flex-1 flex-col border-t border-slate-200 md:min-h-0">
+          <!-- Toolbar -->
+          <div
+            class="flex flex-col gap-3 border-b border-slate-200 bg-slate-50/60 px-8 py-3 lg:flex-row lg:items-center lg:justify-between"
+          >
+            <div class="flex items-center gap-3">
+              <span class="text-sm font-medium text-slate-700">Permissions</span>
+              <span
+                class="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-700"
+              >
+                {{ selectedCount() }} / {{ totalCount() }} selected
+              </span>
+            </div>
+
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <!-- Presets -->
+              <div class="inline-flex rounded-lg bg-slate-200/60 p-0.5 text-xs font-medium">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-slate-600 hover:bg-white hover:text-sky-700 hover:shadow-sm"
+                  (click)="applyPreset('read')"
+                >
+                  <i class="fa-regular fa-eye mr-1"></i> Read only
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-slate-600 hover:bg-white hover:text-sky-700 hover:shadow-sm"
+                  (click)="applyPreset('full')"
+                >
+                  <i class="fa-solid fa-check-double mr-1"></i> Full access
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-slate-600 hover:bg-white hover:text-rose-600 hover:shadow-sm"
+                  (click)="applyPreset('none')"
+                >
+                  <i class="fa-solid fa-ban mr-1"></i> Clear
+                </button>
+              </div>
+
+              <!-- Search -->
+              <div class="relative sm:w-60">
+                <i
+                  class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400"
+                ></i>
+                <input
+                  type="text"
+                  placeholder="Search permissions…"
+                  aria-label="Search permissions"
+                  class="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-8 text-sm outline-none placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  [value]="permSearch()"
+                  (input)="permSearch.set($any($event.target).value)"
+                />
+                @if (permSearch()) {
+                  <button
+                    type="button"
+                    class="absolute right-1.5 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                    aria-label="Clear search"
+                    (click)="permSearch.set('')"
+                  >
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+
+          @if (permissionsLoading()) {
+            <p class="p-8 text-sm text-slate-400">
+              <i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading permissions…
+            </p>
+          } @else if (permissions().length === 0) {
+            <div class="p-8 text-center">
+              <p class="text-sm text-rose-500">No permissions available.</p>
+              <button
+                type="button"
+                class="mt-2 text-sm font-medium text-sky-600 underline"
+                (click)="retryPermissions.emit()"
+              >
+                Retry
+              </button>
+            </div>
+          } @else {
+            <div class="flex min-h-0 flex-1 flex-col md:flex-row">
+              <!-- Modules -->
+              <nav
+                class="flex shrink-0 gap-2 overflow-x-auto border-b border-slate-200 p-3 md:w-60 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r"
+                aria-label="Permission modules"
+              >
+                @for (g of groups(); track g.key) {
+                  <button
+                    type="button"
+                    class="shrink-0 rounded-xl border px-3.5 py-2.5 text-left transition md:shrink"
+                    [class]="
+                      active()?.key === g.key
+                        ? 'border-sky-300 bg-sky-50 ring-2 ring-sky-100'
+                        : 'border-transparent hover:bg-slate-50'
+                    "
+                    [attr.aria-current]="active()?.key === g.key"
+                    (click)="activeKey.set(g.key)"
+                  >
+                    <div class="flex items-center justify-between gap-3">
+                      <span
+                        class="truncate text-sm font-medium capitalize"
+                        [class]="active()?.key === g.key ? 'text-sky-800' : 'text-slate-700'"
+                        >{{ formatModule(g.key) }}</span
+                      >
+                      <span
+                        class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                        [class]="
+                          selectedIn(g) > 0
+                            ? 'bg-sky-500 text-white'
+                            : 'bg-slate-100 text-slate-500'
+                        "
+                        >{{ selectedIn(g) }}/{{ g.items.length }}</span
+                      >
+                    </div>
+                    <div class="mt-2 h-1 overflow-hidden rounded-full bg-slate-200">
+                      <div
+                        class="h-full rounded-full bg-sky-500 transition-all duration-300"
+                        [style.width.%]="progress(g)"
+                      ></div>
+                    </div>
+                  </button>
+                } @empty {
+                  <p class="px-2 py-4 text-sm text-slate-400">No match.</p>
+                }
+              </nav>
+
+              <!-- Permissions of the active module -->
+              <section class="flex min-h-0 flex-1 flex-col">
+                @if (active(); as g) {
+                  <div
+                    class="flex items-center justify-between gap-3 border-b border-slate-100 px-6 py-3"
+                  >
+                    <div>
+                      <h3 class="text-sm font-semibold capitalize text-slate-900">
+                        {{ formatModule(g.key) }}
+                      </h3>
+                      <p class="text-xs text-slate-400">
+                        {{ selectedIn(g) }} of {{ g.items.length }} enabled
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      class="rounded-lg px-3 py-1.5 text-xs font-medium transition"
+                      [class]="
+                        allIn(g)
+                          ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          : 'bg-sky-50 text-sky-700 hover:bg-sky-100'
+                      "
+                      (click)="toggleGroup(g)"
+                    >
+                      {{ allIn(g) ? 'Unselect all' : 'Select all' }}
+                    </button>
+                  </div>
+
+                  <div class="min-h-0 flex-1 space-y-2 overflow-y-auto p-4 md:px-6">
+                    @for (p of g.items; track p.id) {
+                      <button
+                        type="button"
+                        role="switch"
+                        class="group flex w-full items-center gap-4 rounded-xl border px-4 py-3 text-left transition"
+                        [class]="
+                          has(p.id)
+                            ? 'border-sky-300 bg-sky-50/70'
+                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                        "
+                        [attr.aria-checked]="has(p.id)"
+                        (click)="toggle(p.id)"
+                      >
+                        <span
+                          class="grid size-5 shrink-0 place-items-center rounded-md border text-[10px] transition"
+                          [class]="
+                            has(p.id)
+                              ? 'border-sky-500 bg-sky-500 text-white'
+                              : 'border-slate-300 bg-white text-transparent group-hover:border-slate-400'
+                          "
+                        >
+                          <i class="fa-solid fa-check"></i>
+                        </span>
+
+                        <span class="min-w-0 flex-1">
+                          <span class="flex flex-wrap items-center gap-2">
+                            <span class="font-mono text-[13px] font-semibold text-slate-900">{{
+                              p.name
+                            }}</span>
+                            @if (actionOf(p.name)) {
+                              <span
+                                class="rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset"
+                                [class]="badge(actionOf(p.name))"
+                                >{{ actionOf(p.name) }}</span
+                              >
+                            }
+                          </span>
+                          <span class="mt-0.5 block text-xs text-slate-500">
+                            {{ p.description || 'No description' }}
+                          </span>
+                        </span>
+
+                        <span
+                          class="relative h-6 w-11 shrink-0 rounded-full transition-colors after:absolute after:left-0.5 after:top-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition-transform"
+                          [class]="has(p.id) ? 'bg-sky-500 after:translate-x-5' : 'bg-slate-300'"
+                        ></span>
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  <p class="p-8 text-center text-sm text-slate-400">No permissions match.</p>
+                }
+              </section>
+            </div>
+          }
+        </div>
+      </form>
+
+      <!-- Footer -->
+      <div class="flex items-center gap-3 border-t border-slate-200 px-8 py-4">
+        <span class="hidden text-sm text-slate-500 sm:block">
+          {{ selectedCount() }} permission{{ selectedCount() === 1 ? '' : 's' }} selected
+        </span>
+        <div class="ml-auto flex w-full gap-3 sm:w-auto">
+          <button
+            type="button"
+            class="h-[42px] flex-1 rounded-lg border border-slate-300 bg-white px-6 text-[15px] text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            [disabled]="saving()"
+            (click)="requestClose()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            form="roleForm"
+            [disabled]="saving()"
+            class="h-[42px] flex-1 rounded-lg bg-sky-500 px-6 text-[15px] font-medium text-white shadow-sm hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            @if (saving()) {
+              <i class="fa-solid fa-spinner fa-spin mr-1.5 text-xs"></i> Saving...
+            } @else {
+              <i class="fa-solid fa-check mr-1.5 text-xs"></i>
+              {{ isEdit() ? 'Save changes' : 'Add role' }}
+            }
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+}

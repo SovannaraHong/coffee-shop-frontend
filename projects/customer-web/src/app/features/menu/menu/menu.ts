@@ -92,41 +92,27 @@ export class Menu {
   }
 
   /* ── Backend fetch — walk all pages, combine into allProducts ────────── */
+
   loadAllProducts(): void {
     this.fetchSub?.unsubscribe();
+
     this.isLoading.set(true);
     this.loadError.set(false);
 
-    // Send both param styles so it works regardless of backend endpoint variant
-    const query = (p: number) =>
-      this.productApi.getProducts({
-        page: p,
-        _page: p,
-        size: FETCH_SIZE,
-        _limit: FETCH_SIZE,
-        isActive: true,
-      });
-
-    this.fetchSub = query(FIRST_PAGE)
-      .pipe(
-        switchMap((first) => {
-          const total = first.paginationDTO?.totalPage ?? 1;
-          if (total <= 1) return of(first.list);
-
-          // Fetch remaining pages in parallel
-          const rest = Array.from({ length: total - 1 }, (_, i) =>
-            query(FIRST_PAGE + 1 + i).pipe(map((r) => r.list)),
-          );
-          return forkJoin(rest).pipe(map((pages) => [...first.list, ...pages.flat()]));
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
+    this.fetchSub = this.productApi
+      .getAllProducts()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (products) => {
-          this.allProducts.set(products);
+          // Keep only active products for the customer menu
+          const activeProducts = products.filter((product) => product.isActive === true);
+
+          this.allProducts.set(activeProducts);
+          this.currentPage.set(FIRST_PAGE);
           this.isLoading.set(false);
         },
-        error: () => {
+        error: (error) => {
+          console.error('Failed to load products:', error);
           this.loadError.set(true);
           this.isLoading.set(false);
         },
