@@ -1,83 +1,123 @@
-import { Addon, AddonInput } from './../../../../../../libs/models/addon/addon';
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
-// Sample data. Swap this service for HttpClient calls when your API is ready.
-const SEED: Addon[] = [
-  {
-    id: 1,
-    name: 'Extra shot',
-    price: 0.75,
-    isActive: true,
-    createdAt: '2026-09-01T08:00:00',
-    updatedAt: null,
-    createdBy: 'Alex Morgan',
-    updatedBy: null,
-  },
-  {
-    id: 2,
-    name: 'Oat milk',
-    price: 0.6,
-    isActive: true,
-    createdAt: '2026-09-01T08:05:00',
-    updatedAt: null,
-    createdBy: 'Alex Morgan',
-    updatedBy: null,
-  },
-  {
-    id: 3,
-    name: 'Vanilla syrup',
-    price: 0.5,
-    isActive: true,
-    createdAt: '2026-09-02T09:10:00',
-    updatedAt: '2026-10-05T10:00:00',
-    createdBy: 'Alex Morgan',
-    updatedBy: 'Sok Dara',
-  },
-  {
-    id: 4,
-    name: 'Whipped cream',
-    price: 0.4,
-    isActive: false,
-    createdAt: '2026-09-03T10:00:00',
-    updatedAt: '2026-10-10T09:30:00',
-    createdBy: 'Sok Dara',
-    updatedBy: 'Alex Morgan',
-  },
-];
-
-const CURRENT_USER = 'Admin'; // TODO: replace with your logged-in user
+import { AddonApiService } from '../../../../../../libs/api/addon/addon.service';
+import { AddonRequest } from '../../../../../../libs/models/addon/addon-request.model';
+import { AddonResponse } from '../../../../../../libs/models/addon/addon-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class AddonService {
-  private readonly data = signal<Addon[]>(SEED);
-  readonly items = this.data.asReadonly();
+  private readonly api = inject(AddonApiService);
 
-  add(v: AddonInput): void {
-    this.data.update((list) => {
-      const id = Math.max(0, ...list.map((x) => x.id)) + 1;
-      const created: Addon = {
-        ...v,
-        id,
-        createdAt: new Date().toISOString(),
-        updatedAt: null,
-        createdBy: CURRENT_USER,
-        updatedBy: null,
-      };
-      return [created, ...list];
-    });
+  // private writable state
+  private readonly _items = signal<AddonResponse[]>([]);
+  private readonly _error = signal(false);
+  private readonly _loading = signal(false);
+  private readonly _saving = signal(false);
+
+  // public read-only state
+  readonly items = this._items.asReadonly();
+  readonly loading = this._loading.asReadonly();
+  readonly saving = this._saving.asReadonly();
+  readonly error = this._error.asReadonly();
+
+  // get all add-ons
+  async load(): Promise<boolean> {
+    this._error.set(false);
+    this._loading.set(true);
+    try {
+      this._items.set(await firstValueFrom(this.api.getAllAddons()));
+      return true;
+    } catch (error) {
+      console.error('Failed to load add-ons:', error);
+      this._error.set(true);
+      return false;
+    } finally {
+      this._loading.set(false);
+    }
   }
 
-  update(id: number, v: AddonInput): void {
-    this.data.update((list) =>
-      list.map((x) =>
-        x.id === id
-          ? { ...x, ...v, updatedAt: new Date().toISOString(), updatedBy: CURRENT_USER }
-          : x,
-      ),
-    );
+  // get add-on by id
+  async getById(id: number): Promise<AddonResponse | null> {
+    this._error.set(false);
+    try {
+      return await firstValueFrom(this.api.getAddonById(id));
+    } catch (error) {
+      console.error('Failed to get add-on:', error);
+      this._error.set(true);
+      return null;
+    }
   }
 
-  remove(id: number): void {
-    this.data.update((list) => list.filter((x) => x.id !== id));
+  // create add-on
+  async add(request: AddonRequest): Promise<boolean> {
+    this._error.set(false);
+    this._saving.set(true);
+    try {
+      await firstValueFrom(this.api.createAddon(request));
+      await this.load();
+      return true;
+    } catch (error) {
+      console.error('Failed to create add-on:', error);
+      this._error.set(true);
+      return false;
+    } finally {
+      this._saving.set(false);
+    }
+  }
+
+  // update add-on
+  async update(id: number, request: AddonRequest): Promise<boolean> {
+    this._error.set(false);
+    this._saving.set(true);
+    try {
+      const updated = await firstValueFrom(this.api.updateAddon(id, request));
+      this.replace(updated);
+      return true;
+    } catch (error) {
+      console.error('Failed to update add-on:', error);
+      this._error.set(true);
+      return false;
+    } finally {
+      this._saving.set(false);
+    }
+  }
+
+  // remove add-on
+  async remove(id: number): Promise<boolean> {
+    this._error.set(false);
+    this._saving.set(true);
+    try {
+      await firstValueFrom(this.api.deleteAddon(id));
+      this._items.update((list) => list.filter((a) => a.id !== id));
+      return true;
+    } catch (error) {
+      console.error('Failed to delete add-on:', error);
+      this._error.set(true);
+      return false;
+    } finally {
+      this._saving.set(false);
+    }
+  }
+
+  // toggle active / inactive
+  async changeStatus(id: number): Promise<boolean> {
+    this._error.set(false);
+    this._saving.set(true);
+    try {
+      const updated = await firstValueFrom(this.api.changeAddonStatus(id));
+      this.replace(updated);
+      return true;
+    } catch (error) {
+      console.error('Failed to change add-on status:', error);
+      this._error.set(true);
+      return false;
+    } finally {
+      this._saving.set(false);
+    }
+  }
+
+  private replace(updated: AddonResponse): void {
+    this._items.update((list) => list.map((a) => (a.id === updated.id ? updated : a)));
   }
 }
