@@ -1,53 +1,72 @@
-import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  DEMO_TODAY,
-  TOP_SELLING,
-  WEEK_EXPENSES,
-  WEEK_LABELS,
-  WEEK_SALES,
-} from '../../core/data/mock-data';
-import { stockStatus } from '../../core/models/inventory-item';
-import { InventoryService } from '../../core/services/inventory-service';
-import { OrderService } from '../../core/services/order-service';
-import { ProductService } from '../../core/services/product-service';
-import { StaffService } from '../../core/services/staff-service';
-import { SupplierService } from '../../core/services/supplier-service';
-import { DonutChart, DonutSegment } from '../../shared/components/charts/donut-chart';
+import { DashboardService, RevenueRange } from '../../core/services/dashboard-service';
 import { PageHeader } from '../../shared/components/page-header/page-header';
 import { StatusBadge } from '../../shared/components/status-badge/status-badge';
-import { StatCard } from '../../shared/components/stat-card/stat-card';
 import { BarChart } from '../../shared/components/charts/bar-chart/bar-chart';
-import { CustomerRing } from '../../shared/components/customer-ring/customer-ring';
+import { StatCard } from '../../shared/components/stat-card/stat-card';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [
-    RouterLink,
-    CurrencyPipe,
-    DatePipe,
-    PageHeader,
-    StatusBadge,
-    BarChart,
-    StatCard,
-    CustomerRing,
-  ],
+  imports: [RouterLink, CurrencyPipe, DatePipe, DecimalPipe, PageHeader, StatusBadge, BarChart, StatCard],
   templateUrl: './dashboard.html',
 })
-export class Dashboard {
-  private readonly orders = inject(OrderService);
-  private readonly inventory = inject(InventoryService);
-  private readonly products = inject(ProductService);
-  protected readonly staff = inject(StaffService).items;
-  protected readonly suppliers = inject(SupplierService).items;
+export class Dashboard implements OnInit {
+  private readonly dash = inject(DashboardService);
 
-  protected readonly today = DEMO_TODAY;
-  protected readonly weekLabels = WEEK_LABELS;
-  protected readonly weekSeries = [
-    { name: 'Sales', color: '#e66239', data: WEEK_SALES },
-    { name: 'Expenses', color: '#f7a085', data: WEEK_EXPENSES },
+  protected readonly today = new Date().toISOString();
+  protected readonly loading = signal(false);
+
+  // Time-range filter
+  protected readonly rangeFilter = this.dash.rangeFilter;
+  protected readonly rangeTabs: { value: RevenueRange; label: string }[] = [
+    { value: 'day', label: 'Today' },
+    { value: 'week', label: 'This Week' },
+    { value: 'month', label: 'This Month' },
+    { value: 'year', label: 'This Year' },
   ];
+
+  // Computed period label for stat card notes
+  protected readonly periodLabel = computed(() => {
+    const map: Record<RevenueRange, string> = {
+      day: 'today',
+      week: 'this week',
+      month: 'this month',
+      year: 'this year',
+    };
+    return map[this.rangeFilter()];
+  });
+
+  // KPI cards
+  protected readonly totalRevenue = this.dash.totalRevenue;
+  protected readonly orderCount = this.dash.orderCount;
+  protected readonly totalPurchase = this.dash.totalPurchase;
+  protected readonly lowStockCount = this.dash.lowStockCount;
+
+  // Summary cards
+  protected readonly allTimeRevenue = this.dash.allTimeRevenue;
+  protected readonly avgOrderValue = this.dash.avgOrderValue;
+  protected readonly allTimePurchase = this.dash.allTimePurchase;
+
+  // Overall info counts
+  protected readonly customerCount = this.dash.customerCount;
+  protected readonly supplierCount = this.dash.supplierCount;
+  protected readonly productCount = this.dash.productCount;
+
+  // Lists
+  protected readonly recentOrders = this.dash.recentOrders;
+  protected readonly lowStockItems = this.dash.lowStockItems;
+  protected readonly topSelling = this.dash.topSelling;
+
+  // Chart
+  protected readonly chartLabels = this.dash.chartLabels;
+  protected readonly weekSeries = computed(() => [
+    { name: 'Sales', color: '#e66239', data: this.dash.salesChartData() },
+    { name: 'Purchases', color: '#f7a085', data: this.dash.purchaseChartData() },
+  ]);
+
+  // Badge colour pills for top-selling
   protected readonly pillTones = [
     'border-red-400 bg-red-50 text-red-500',
     'border-[#e8643c] bg-orange-50 text-[#e8643c]',
@@ -55,51 +74,10 @@ export class Dashboard {
     'border-green-400 bg-green-50 text-green-600',
     'border-yellow-400 bg-yellow-50 text-yellow-600',
   ];
-  protected readonly customerSegments: DonutSegment[] = [
-    { label: 'New customers', value: 312, color: '#e66239' },
-    { label: 'Returning', value: 548, color: '#10b981' },
-  ];
 
-  private readonly todaysOrders = computed(() => {
-    const today = new Date().toDateString();
-
-    return this.orders.items().filter((o) => new Date(o.orderDate).toDateString() === today);
-  });
-  protected readonly todaysOrderCount = computed(() => this.todaysOrders().length);
-  protected readonly todaysSales = computed(() =>
-    this.todaysOrders()
-      .filter((o) => o.status !== 'CANCELLED')
-      .reduce((sum, o) => sum + (o.finalAmount ?? 0), 0),
-  );
-  protected readonly avgOrderValue = computed(() => {
-    const list = this.todaysOrders().filter((o) => o.status !== 'CANCELLED');
-
-    return list.length ? this.todaysSales() / list.length : 0;
-  });
-  protected readonly customerCount = computed(
-    () => new Set(this.orders.items().map((o) => o.customerName)).size,
-  );
-  protected readonly lowStockCount = computed(
-    () => this.inventory.lowStock().length + this.inventory.outOfStock().length,
-  );
-
-  protected readonly recentOrders = computed(() =>
-    [...this.orders.items()]
-      .sort((a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime())
-      .slice(0, 5),
-  );
-  protected readonly lowStockItems = computed(() =>
-    this.inventory
-      .items()
-      .filter((i) => stockStatus(i) !== 'In stock')
-      .sort((a, b) => a.quantity / a.reorderLevel - b.quantity / b.reorderLevel)
-      .slice(0, 5),
-  );
-  protected readonly topSelling = computed(() =>
-    TOP_SELLING.map((t) => ({ ...t, product: this.products.getById(t.productId) })).filter(
-      (t) => t.product,
-    ),
-  );
-
-  protected readonly stockStatus = stockStatus;
+  async ngOnInit(): Promise<void> {
+    this.loading.set(true);
+    await this.dash.loadAll();
+    this.loading.set(false);
+  }
 }

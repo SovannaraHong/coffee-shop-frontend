@@ -23,7 +23,9 @@
     </a>
   </div>
 
-  <nav class="flex-1 overflow-y-auto px-3 py-3">
+  <nav
+    class="flex-1 overflow-y-auto px-3 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+  >
     @for (section of sections; track $index) {
       @if (!$first) {
         <div class="mx-1 my-2 border-t border-neutral-700"></div>
@@ -147,7 +149,7 @@
   </div>
 
   <div class="flex items-center gap-2">
-    <!-- Notifications -->
+    <!-- Notifications Bell -->
     <div class="relative" (appClickOutside)="notifOpen.set(false)">
       <button
         type="button"
@@ -156,39 +158,76 @@
         (click)="notifOpen.set(!notifOpen()); userOpen.set(false)"
       >
         <i class="fa-regular fa-bell"></i>
-        <span
-          class="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-red-500 text-[10px] font-semibold text-white"
-          >{{ notifications.length }}</span
-        >
+
+        @if (notifService.unreadCount() > 0) {
+          <span
+            class="absolute -right-0.5 -top-0.5 grid min-w-[18px] place-items-center rounded-full bg-red-500 px-1 py-0.5 text-[10px] font-bold leading-none text-white"
+          >
+            {{ notifService.unreadCount() > 99 ? '99+' : notifService.unreadCount() }}
+          </span>
+        }
       </button>
+
       @if (notifOpen()) {
         <div
-          class="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-lg"
+          class="absolute right-0 mt-2 w-96 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl"
         >
-          <div class="border-b border-neutral-100 px-4 py-3 text-sm font-semibold text-neutral-900">
-            Notifications
+          <!-- Dropdown header -->
+          <div class="flex items-center justify-between border-b border-neutral-100 px-4 py-3">
+            <span class="text-sm font-semibold text-neutral-900">
+              Notifications
+              @if (notifService.unreadCount() > 0) {
+                <span
+                  class="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white"
+                >
+                  {{ notifService.unreadCount() }}
+                </span>
+              }
+            </span>
+            @if (notifService.unreadCount() > 0) {
+              <button
+                type="button"
+                class="text-xs text-[#e8643c] hover:underline"
+                (click)="notifService.markAllRead()"
+              >
+                Mark all read
+              </button>
+            }
           </div>
-          <ul class="divide-y divide-neutral-100">
-            @for (n of notifications; track n.title) {
-              <li class="flex gap-3 px-4 py-3">
+
+          <!-- Notification list -->
+          <ul class="max-h-[420px] divide-y divide-neutral-100 overflow-y-auto">
+            @for (n of notifService.items(); track n.id) {
+              <li
+                class="flex gap-3 px-4 py-3 transition-colors"
+                [class]="n.read ? 'bg-white' : 'bg-orange-50/50'"
+              >
                 <span
                   class="grid size-9 shrink-0 place-items-center rounded-full text-sm"
                   [class]="n.tone"
-                  ><i class="fa-solid" [class]="n.icon"></i
-                ></span>
-                <div class="min-w-0 text-sm">
+                >
+                  <i class="fa-solid" [class]="n.icon"></i>
+                </span>
+                <div class="min-w-0 flex-1 text-sm">
                   <p class="font-medium text-neutral-900">{{ n.title }}</p>
                   <p class="text-neutral-500">{{ n.text }}</p>
-                  <p class="mt-0.5 text-xs text-neutral-400">{{ n.time }}</p>
+                  <p class="mt-0.5 text-xs text-neutral-400">{{ timeAgo(n.time) }}</p>
                 </div>
+                @if (!n.read) {
+                  <span class="mt-1.5 size-2 shrink-0 rounded-full bg-[#e8643c]"></span>
+                }
+              </li>
+            } @empty {
+              <li class="px-4 py-8 text-center text-sm text-neutral-400">
+                <i class="fa-regular fa-bell-slash mb-2 block text-2xl"></i>
+                No notifications yet
               </li>
             }
           </ul>
-          <a
-            href="#"
-            class="block border-t border-neutral-100 px-4 py-2.5 text-center text-sm text-primary hover:bg-neutral-50"
-            >View all notifications</a
-          >
+
+          <div class="border-t border-neutral-100 px-4 py-2.5 text-center">
+            <span class="text-xs text-neutral-400">Live — checks every 30 s</span>
+          </div>
         </div>
       }
     </div>
@@ -252,3 +291,6 @@
     </footer>
   </div>
 </main>
+
+<!-- Global notification toasts (bottom-right slide-ins) -->
+<app-notification-toast />

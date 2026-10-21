@@ -5,35 +5,60 @@
   <a routerLink="/orders" class="btn btn-primary">View orders</a>
 </app-page-header>
 
+@if (loading()) {
+  <div class="flex items-center justify-center py-16">
+    <i class="fa-solid fa-spinner fa-spin text-3xl text-[#e8643c]"></i>
+    <span class="ml-3 text-neutral-500">Loading dashboard…</span>
+  </div>
+} @else {
+
+<!-- Time-range filter tabs -->
+<div class="mb-4 flex items-center gap-2">
+  @for (tab of rangeTabs; track tab.value) {
+    <button
+      type="button"
+      class="rounded-full border px-4 py-1.5 text-sm font-medium transition"
+      [class]="
+        rangeFilter() === tab.value
+          ? 'border-[#e8643c] bg-[#e8643c] text-white'
+          : 'border-neutral-200 bg-white text-neutral-600 hover:border-[#e8643c] hover:text-[#e8643c]'
+      "
+      (click)="rangeFilter.set(tab.value)"
+    >
+      {{ tab.label }}
+    </button>
+  }
+</div>
+
 <!-- KPI cards -->
 <div class="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
   <app-stat-card
-    label="Total Sales"
-    icon="fa-clipboard-list"
-    tone="primary"
-    [value]="(todaysSales() | currency)!"
-    note="+5% since last month"
-  />
-  <app-stat-card
-    label="Total Purchase"
-    icon="fa-repeat"
-    tone="green"
-    [value]="todaysOrderCount()"
-    note="+22% since last month"
-  />
-  <app-stat-card
-    label="Total Expenses"
+    label="Total Revenue"
     icon="fa-dollar-sign"
-    tone="sky"
-    [value]="customerCount()"
-    note="+10% since last month"
+    tone="primary"
+    [value]="(totalRevenue() | currency)!"
+    [note]="'Revenue ' + periodLabel()"
   />
   <app-stat-card
-    label="Invoice Due"
-    icon="fa-file-lines"
+    label="Total Orders"
+    icon="fa-clipboard-list"
+    tone="green"
+    [value]="orderCount()"
+    [note]="'Orders ' + periodLabel()"
+  />
+  <app-stat-card
+    label="Total Purchases"
+    icon="fa-repeat"
+    tone="sky"
+    [value]="(totalPurchase() | currency)!"
+    [note]="'Purchase cost ' + periodLabel()"
+  />
+  <app-stat-card
+    label="Low Stock Items"
+    icon="fa-triangle-exclamation"
     tone="amber"
     [value]="lowStockCount()"
-    note="+35% since last month"
+    [note]="'Ingredients need restocking'"
   />
 </div>
 
@@ -42,40 +67,46 @@
   <div class="card px-6 py-6">
     <div class="flex items-start justify-between border-b border-neutral-200 pb-9">
       <div>
-        <p class="text-2xl font-semibold text-neutral-900">$25,458</p>
-        <p class="mt-2 text-[15px] text-neutral-800">Total Profit</p>
+        <p class="text-2xl font-semibold text-neutral-900">{{ allTimeRevenue() | currency }}</p>
+        <p class="mt-2 text-[15px] text-neutral-800">Total Revenue (All Time)</p>
       </div>
       <i class="fa-regular fa-copy text-3xl text-[#e8643c]"></i>
     </div>
     <div class="mt-5 flex items-center justify-between text-[13px]">
-      <p class="text-neutral-600"><span class="text-[#00c853]">+35%</span> vs Last Month</p>
-      <a routerLink="/reports" class="text-[#e8643c] underline">View</a>
-    </div>
-  </div>
-  <div class="card px-6 py-6">
-    <div class="flex items-start justify-between border-b border-neutral-200 pb-9">
-      <div>
-        <p class="text-2xl font-semibold text-neutral-900">{{ avgOrderValue() | currency }}</p>
-        <p class="mt-2 text-[15px] text-neutral-800">Total Payment Returns</p>
-      </div>
-      <i class="fa-regular fa-credit-card text-3xl text-[#ef4444]"></i>
-    </div>
-    <div class="mt-5 flex items-center justify-between text-[13px]">
-      <p class="text-neutral-600"><span class="text-[#ef4444]">-20%</span> vs Last Month</p>
+      <p class="text-neutral-600">
+        <span class="text-[#00c853]">{{ orderCount() }} orders</span> in period
+      </p>
       <a routerLink="/orders" class="text-[#e8643c] underline">View</a>
     </div>
   </div>
   <div class="card px-6 py-6">
     <div class="flex items-start justify-between border-b border-neutral-200 pb-9">
       <div>
-        <p class="text-2xl font-semibold text-neutral-900">$34,458</p>
-        <p class="mt-2 text-[15px] text-neutral-800">Total Expenses</p>
+        <p class="text-2xl font-semibold text-neutral-900">{{ avgOrderValue() | currency }}</p>
+        <p class="mt-2 text-[15px] text-neutral-800">Avg. Order Value</p>
+      </div>
+      <i class="fa-regular fa-credit-card text-3xl text-[#ef4444]"></i>
+    </div>
+    <div class="mt-5 flex items-center justify-between text-[13px]">
+      <p class="text-neutral-600">
+        <span class="text-neutral-500">Based on {{ orderCount() }} orders</span>
+      </p>
+      <a routerLink="/orders" class="text-[#e8643c] underline">View</a>
+    </div>
+  </div>
+  <div class="card px-6 py-6">
+    <div class="flex items-start justify-between border-b border-neutral-200 pb-9">
+      <div>
+        <p class="text-2xl font-semibold text-neutral-900">{{ allTimePurchase() | currency }}</p>
+        <p class="mt-2 text-[15px] text-neutral-800">Total Purchase Cost</p>
       </div>
       <i class="fa-regular fa-money-bill-1 text-3xl text-[#f2b100]"></i>
     </div>
     <div class="mt-5 flex items-center justify-between text-[13px]">
-      <p class="text-neutral-600"><span class="text-[#f2b100]">-20%</span> vs Last Month</p>
-      <a routerLink="/inventory" class="text-[#e8643c] underline">View</a>
+      <p class="text-neutral-600">
+        <span class="text-[#f2b100]">Ingredient & supply</span> spending
+      </p>
+      <a routerLink="/purchase-orders" class="text-[#e8643c] underline">View</a>
     </div>
   </div>
 </div>
@@ -84,32 +115,36 @@
 <div class="mb-4 grid items-start gap-4 lg:grid-cols-2">
   <div class="card">
     <div class="card-header">
-      <h2 class="card-title">Sales vs Purchase</h2>
-      <select class="select-box">
-        <option>This Year</option>
-        <option>Last Year</option>
-      </select>
+      <h2 class="card-title">Sales vs Purchases</h2>
+      <span class="select-box text-neutral-800 text-sm">Last 7 Days</span>
     </div>
-    <div class="px-6 pb-6 pt-10"><app-bar-chart [labels]="weekLabels" [series]="weekSeries" /></div>
+    <div class="px-6 pb-6 pt-10">
+      <app-bar-chart [labels]="chartLabels()" [series]="weekSeries()" yTitle="$" />
+    </div>
   </div>
 
   <div class="card">
     <div class="card-header">
       <h2 class="card-title">Overall Information</h2>
-      <select class="select-box">
-        <option>Last 6 Months</option>
-        <option>This Month</option>
-      </select>
     </div>
     <div class="px-6 pt-6">
-      <p class="text-[15px] text-neutral-800">Customers Overview</p>
-      <app-customer-ring />
+      <!-- Quick stats strip -->
+      <div class="mb-4 grid grid-cols-2 gap-3">
+        <div class="rounded-xl bg-[#fde3da] p-4">
+          <p class="text-2xl font-bold text-[#e8643c]">{{ orderCount() }}</p>
+          <p class="mt-1 text-sm text-[#b04e2b]">Orders (period)</p>
+        </div>
+        <div class="rounded-xl bg-[#e6f8ee] p-4">
+          <p class="text-2xl font-bold text-[#00c853]">{{ (totalRevenue() | currency) }}</p>
+          <p class="mt-1 text-sm text-[#007a32]">Revenue (period)</p>
+        </div>
+      </div>
     </div>
     <div
       class="mx-1 grid grid-cols-3 divide-x divide-neutral-200 border-t border-neutral-200 py-8 text-center"
     >
       <div>
-        <p class="text-[28px] font-semibold text-neutral-900">{{ suppliers().length }}</p>
+        <p class="text-[28px] font-semibold text-neutral-900">{{ supplierCount() }}</p>
         <p class="mt-2 text-sm text-neutral-600">Suppliers</p>
       </div>
       <div>
@@ -117,8 +152,8 @@
         <p class="mt-2 text-sm text-neutral-600">Customers</p>
       </div>
       <div>
-        <p class="text-[28px] font-semibold text-neutral-900">{{ todaysOrderCount() }}</p>
-        <p class="mt-2 text-sm text-neutral-600">Orders</p>
+        <p class="text-[28px] font-semibold text-neutral-900">{{ productCount() }}</p>
+        <p class="mt-2 text-sm text-neutral-600">Products</p>
       </div>
     </div>
   </div>
@@ -130,77 +165,93 @@
   <div class="card overflow-hidden">
     <div class="card-header">
       <h2 class="card-title">Top Selling Products</h2>
-      <span class="select-box text-neutral-800"
-        ><i class="fa-regular fa-calendar mr-1"></i>Today</span
-      >
+      <span class="select-box text-neutral-800 text-sm">
+        <i class="fa-regular fa-calendar mr-1"></i>All Time
+      </span>
     </div>
-    <ul class="divide-y divide-neutral-200">
-      @for (t of topSelling(); track t.productId; let idx = $index) {
-        <li class="flex items-center gap-4 px-4 py-3">
-          <span
-            class="grid size-[52px] shrink-0 place-items-center rounded-md bg-neutral-100 text-neutral-500"
-            ><i class="fa-solid fa-mug-hot"></i
-          ></span>
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-[15px] text-neutral-900">t.product!.name</p>
-            <p class="mt-0.5 text-[13px] text-neutral-600">
-              <span class="font-semibold text-neutral-900">
-                t.product!.price | currency: 'USD' : 'symbol' : '1.0-0'
-              </span>
-              &nbsp;•&nbsp; {{ t.units }} Units
-            </p>
-          </div>
-          <span
-            class="rounded border px-2 py-0.5 text-[11px] font-semibold"
-            [class]="pillTones[idx % 5]"
-            >{{ t.share }}%</span
-          >
-        </li>
-      }
-    </ul>
+    @if (topSelling().length === 0) {
+      <div class="px-4 py-8 text-center text-sm text-neutral-400">
+        No sales data available yet.
+      </div>
+    } @else {
+      <ul class="divide-y divide-neutral-200">
+        @for (t of topSelling(); track t.name; let idx = $index) {
+          <li class="flex items-center gap-4 px-4 py-3">
+            <span
+              class="grid size-[52px] shrink-0 place-items-center overflow-hidden rounded-md bg-neutral-100 text-neutral-500"
+            >
+              @if (t.imageUrl) {
+                <img [src]="t.imageUrl" [alt]="t.name" class="size-full object-cover" />
+              } @else {
+                <i class="fa-solid fa-mug-hot"></i>
+              }
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-[15px] text-neutral-900">{{ t.name }}</p>
+              <p class="mt-0.5 text-[13px] text-neutral-600">
+                <span class="font-semibold text-neutral-900">{{ t.units }}</span>
+                &nbsp;units sold
+              </p>
+            </div>
+            <span
+              class="rounded border px-2 py-0.5 text-[11px] font-semibold"
+              [class]="pillTones[idx % 5]"
+              >{{ t.share }}%</span
+            >
+          </li>
+        }
+      </ul>
+    }
   </div>
 
   <!-- Low stock -->
   <div class="card overflow-hidden">
     <div class="card-header">
-      <h2 class="card-title">Low Stock Products</h2>
-      <a routerLink="/inventory" class="text-sm text-[#e8643c] underline">View All</a>
+      <h2 class="card-title">Low Stock Ingredients</h2>
+      <a routerLink="/ingredients" class="text-sm text-[#e8643c] underline">View All</a>
     </div>
-    <ul class="divide-y divide-neutral-200">
-      @for (i of lowStockItems(); track i.id) {
-        <li class="flex items-center gap-4 px-4 py-3">
-          <span
-            class="grid size-[52px] shrink-0 place-items-center rounded-md bg-neutral-100 text-neutral-500"
-            ><i class="fa-solid fa-box"></i
-          ></span>
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-[15px] text-neutral-900">{{ i.name }}</p>
-            <p class="mt-0.5 text-[13px] text-neutral-600">ID: #{{ i.code }}</p>
-          </div>
-          <div class="text-right">
-            <p class="text-[15px] font-semibold text-[#e8643c]">
-              {{ i.quantity < 10 ? '0' + i.quantity : i.quantity }}
-            </p>
-            <p class="text-[13px] text-neutral-600">In Stock</p>
-          </div>
-        </li>
-      }
-    </ul>
+    @if (lowStockItems().length === 0) {
+      <div class="px-4 py-8 text-center text-sm text-neutral-400">
+        All ingredients are stocked well 🎉
+      </div>
+    } @else {
+      <ul class="divide-y divide-neutral-200">
+        @for (i of lowStockItems(); track i.id) {
+          <li class="flex items-center gap-4 px-4 py-3">
+            <span
+              class="grid size-[52px] shrink-0 place-items-center rounded-md bg-red-50 text-red-400"
+            >
+              <i class="fa-solid fa-wheat-awn"></i>
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-[15px] text-neutral-900">{{ i.name }}</p>
+              <p class="mt-0.5 text-[13px] text-neutral-500">
+                Reorder at: {{ i.reorderLevel }} {{ i.unit }}
+              </p>
+            </div>
+            <div class="text-right">
+              <p class="text-[15px] font-semibold text-[#e8643c]">
+                {{ i.quantityInStock | number: '1.0-1' }}
+              </p>
+              <p class="text-[13px] text-neutral-600">{{ i.unit }} left</p>
+            </div>
+          </li>
+        }
+      </ul>
+    }
   </div>
 
   <!-- Recent sales -->
   <div class="card overflow-hidden">
     <div class="card-header">
-      <h2 class="card-title">Recent Sales</h2>
-      <span class="select-box text-neutral-800"
-        ><i class="fa-regular fa-calendar mr-1"></i>Weekly</span
-      >
+      <h2 class="card-title">Recent Orders</h2>
+      <a routerLink="/orders" class="text-sm text-[#e8643c] underline">View All</a>
     </div>
     <ul class="divide-y divide-neutral-200">
       @for (o of recentOrders(); track o.id) {
         <li>
           <a
-            [routerLink]="['/orders', o.id]"
+            [routerLink]="['/orders']"
             class="flex items-center gap-4 px-4 py-3 hover:bg-neutral-50"
           >
             <span
@@ -237,3 +288,5 @@
   Copyright © 2026 InApp Inventory Dashboard. Developed by
   <a class="text-[#e8643c]">CodesCandy</a> • Distributed by <a class="text-[#e8643c]">ThemeWagon</a>
 </footer>
+
+} <!-- end @if (loading()) -->

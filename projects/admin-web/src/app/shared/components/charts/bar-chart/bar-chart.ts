@@ -24,16 +24,18 @@ export class BarChart {
     niceMax(Math.max(1, ...this.series().flatMap((s) => s.data))),
   );
 
-  protected readonly ticks = computed(() =>
-    Array.from({ length: 7 }, (_, i) => {
-      const value = (this.max() / 6) * i;
+  protected readonly ticks = computed(() => {
+    const max = this.max();
+    const steps = 5; // 0 → max in 5 even steps = 6 labels
+    return Array.from({ length: steps + 1 }, (_, i) => {
+      const value = (max / steps) * i;
       return {
         value,
-        y: this.T + this.plotH - (value / this.max()) * this.plotH,
+        y: this.T + this.plotH - (value / max) * this.plotH,
         label: compact(value, this.prefix()),
       };
-    }),
-  );
+    });
+  });
 
   protected readonly groups = computed(() => {
     const labels = this.labels();
